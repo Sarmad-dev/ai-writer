@@ -1,0 +1,226 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model
+
+model User {
+  id               String             @id @default(cuid())
+  email            String             @unique
+  emailVerified    Boolean            @default(false)
+  name             String?
+  password         String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  sessions         Session[]
+  contentSessions  ContentSession[]
+  chatConversations ChatConversation[]
+  images           Image[]
+  image            String?
+  accounts         Account[]
+  messageFeedback  MessageFeedback[]
+
+  @@map("user")
+}
+
+// Better Auth session
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  token     String
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  @@index([userId])
+  @@unique([token])
+  @@map("session")
+}
+
+// Content generation session (for AI content with workflow)
+
+model ContentSession {
+  id               String            @id @default(cuid())
+  userId           String
+  title            String
+  prompt           String?            @db.Text
+  content          String?           @db.Text
+  status           SessionStatus     @default(PENDING)
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  graphs           Graph[]
+  approvalRequests ApprovalRequest[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Chat conversation (for simple ChatGPT-like chats)
+
+model ChatConversation {
+  id        String        @id @default(cuid())
+  userId    String
+  title     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String            @db.Text
+  createdAt      DateTime          @default(now())
+  conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  feedback       MessageFeedback[]
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model MessageFeedback {
+  id           String       @id @default(cuid())
+  messageId    String
+  userId       String
+  feedbackType FeedbackType
+  createdAt    DateTime     @default(now())
+  message      ChatMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum FeedbackType {
+  LIKE
+  DISLIKE
+}
+
+enum SessionStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+// Graph/chart data
+
+model Graph {
+  id               String         @id @default(cuid())
+  contentSessionId String
+  type             ChartType
+  data             Json
+  config           Json
+  position         Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  contentSession   ContentSession @relation(fields: [contentSessionId], references: [id], onDelete: Cascade)
+
+  @@index([contentSessionId])
+}
+
+enum ChartType {
+  BAR
+  LINE
+  PIE
+  AREA
+  SCATTER
+}
+
+// Human-in-the-loop approval requests
+
+model ApprovalRequest {
+  id               String         @id @default(cuid())
+  contentSessionId String
+  action           String
+  details          Json
+  status           ApprovalStatus @default(PENDING)
+  response         Json?
+  createdAt        DateTime       @default(now())
+  resolvedAt       DateTime?
+  contentSession   ContentSession @relation(fields: [contentSessionId], references: [id], onDelete: Cascade)
+
+  @@index([contentSessionId])
+  @@index([status])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  TIMEOUT
+}
+
+// Image uploads
+
+model Image {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  filename  String
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
