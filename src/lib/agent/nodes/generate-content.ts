@@ -92,7 +92,17 @@ async function generateWithOpenAI(
       
 If web search results are provided, incorporate them naturally into the content and cite sources using markdown links like [Source Name](URL).
 
-Format your response in markdown with appropriate headings, paragraphs, lists, and emphasis.
+Format your response in HTML with appropriate headings, paragraphs, lists, and emphasis tags.
+
+For code blocks, use the following format:
+<pre><code class="language-{languageName}">your code here</code></pre>
+
+Supported languages include: javascript, typescript, python, java, cpp, csharp, php, ruby, go, rust, sql, bash, json, xml, html, css, scss, yaml, markdown, swift, kotlin
+
+Examples:
+- For JavaScript: <pre><code class="language-javascript">console.log('Hello');</code></pre>
+- For Python: <pre><code class="language-python">print('Hello')</code></pre>
+- For TypeScript: <pre><code class="language-typescript">const x: string = 'Hello';</code></pre>
 
 Be informative, engaging, and accurate. If you use information from search results, always cite the source.`,
     },
@@ -132,9 +142,9 @@ Be informative, engaging, and accurate. If you use information from search resul
 
   // Call OpenAI API using the client
   const generatedContent = await openai.createChatCompletion(messages, {
-    model: hasImages ? 'gpt-4-vision-preview' : 'gpt-4-turbo-preview',
+    model: hasImages ? 'gpt-4-vision-preview' : 'gpt-5.1',
     temperature: 0.7,
-    maxTokens: 2000,
+    maxTokens: 5000,
   });
 
   return generatedContent;

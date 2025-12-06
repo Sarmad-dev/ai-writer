@@ -19,14 +19,14 @@ interface GenerationSidebarProps {
 
 const statusConfig: Record<WorkflowStatus, { label: string; color: string; icon: any }> = {
   idle: { label: 'Ready', color: 'text-gray-500', icon: Clock },
-  analyzing: { label: 'Analyzing', color: 'text-blue-500', icon: Loader2 },
-  searching: { label: 'Searching', color: 'text-purple-500', icon: Loader2 },
-  waiting_approval: { label: 'Waiting', color: 'text-yellow-500', icon: Clock },
-  generating: { label: 'Generating', color: 'text-green-500', icon: Loader2 },
-  formatting: { label: 'Formatting', color: 'text-indigo-500', icon: Loader2 },
-  saving: { label: 'Saving', color: 'text-teal-500', icon: Loader2 },
+  analyzing: { label: 'Analyzing Prompt', color: 'text-blue-500', icon: Loader2 },
+  searching: { label: 'Web Searching', color: 'text-purple-500', icon: Loader2 },
+  waiting_approval: { label: 'Awaiting Approval', color: 'text-yellow-500', icon: Clock },
+  generating: { label: 'Generating Content', color: 'text-green-500', icon: Loader2 },
+  formatting: { label: 'Formatting Output', color: 'text-indigo-500', icon: Loader2 },
+  saving: { label: 'Saving to Database', color: 'text-teal-500', icon: Loader2 },
   completed: { label: 'Completed', color: 'text-green-600', icon: CheckCircle2 },
-  error: { label: 'Error', color: 'text-red-500', icon: AlertCircle },
+  error: { label: 'Error Occurred', color: 'text-red-500', icon: AlertCircle },
 };
 
 export function GenerationSidebar({ status, steps }: GenerationSidebarProps) {

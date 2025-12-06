@@ -143,6 +143,80 @@ export async function PUT(
 }
 
 /**
+ * PATCH /api/content/sessions/[id]
+ * Partially update a content session (for auto-save and incremental updates)
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Authenticate the user
+    const session = await auth.api.getSession({ headers: req.headers });
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+
+    // Parse request body
+    const body: Partial<UpdateSessionRequest> = await req.json();
+    const { title, content, prompt, status, metadata } = body;
+
+    // Check if session exists and user owns it
+    const existingSession = await prisma.contentSession.findUnique({
+      where: { id },
+    });
+
+    if (!existingSession) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Content session not found' } },
+        { status: 404 }
+      );
+    }
+
+    if (existingSession.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: { code: 'FORBIDDEN', message: 'Access denied' } },
+        { status: 403 }
+      );
+    }
+
+    // Build update data - only update fields that are provided
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (prompt !== undefined) updateData.prompt = prompt;
+    if (status !== undefined) updateData.status = status;
+    if (metadata !== undefined) updateData.metadata = metadata;
+
+    // Update content session
+    const updatedSession = await prisma.contentSession.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json(updatedSession);
+  } catch (error) {
+    console.error('Patch content session error:', error);
+    
+    return NextResponse.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/content/sessions/[id]
  * Delete a content session
  */

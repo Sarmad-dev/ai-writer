@@ -24,6 +24,7 @@ export interface CreateSessionRequest {
 
 export interface UpdateSessionRequest {
   title?: string;
+  prompt?: string;
   content?: string;
   status?: SessionStatus;
   metadata?: Record<string, any>;

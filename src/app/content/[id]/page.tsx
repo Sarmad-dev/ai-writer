@@ -1,11 +1,12 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Loader2, Send, Sparkles } from 'lucide-react';
 import { GenerationSidebar } from '@/components/content/GenerationSidebar';
-import { ContentEditor } from '@/components/content/ContentEditor';
+import { ContentEditor } from '@/components/editor/ContentEditor';
 import { SuggestionsSidebar } from '@/components/content/SuggestionsSidebar';
 import type { WorkflowStatus } from '@/lib/agent/types';
 
@@ -22,16 +23,20 @@ export default function ContentDetailPage() {
 
   const [status, setStatus] = useState<WorkflowStatus>('idle');
   const [content, setContent] = useState('');
-  const [prompt, setPrompt] = useState('');
+  const [promptInput, setPromptInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [steps, setSteps] = useState<GenerationStep[]>([
     { name: 'Analyze Prompt', status: 'pending', description: 'Understanding your requirements' },
     { name: 'Web Search', status: 'pending', description: 'Gathering relevant information' },
+    { name: 'Approval', status: 'pending', description: 'Waiting for approval if needed' },
     { name: 'Generate Content', status: 'pending', description: 'Creating your content' },
+    { name: 'Detect Graphs', status: 'pending', description: 'Identifying diagrams and visualizations' },
     { name: 'Format & Polish', status: 'pending', description: 'Finalizing the output' },
     { name: 'Save', status: 'pending', description: 'Saving to database' },
   ]);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   // Load session data
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function ContentDetailPage() {
         if (!response.ok) throw new Error('Failed to load session');
         
         const data = await response.json();
-        setPrompt(data.prompt || '');
+        setPromptInput(data.prompt || '');
         setContent(data.content || '');
       } catch (err) {
         console.error('Error loading session:', err);
@@ -54,13 +59,50 @@ export default function ContentDetailPage() {
     loadSession();
   }, [sessionId]);
 
-  // Connect to SSE for generation updates
+  // Cleanup event source on unmount
   useEffect(() => {
-    if (status === 'idle' || status === 'completed' || status === 'error') {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle generation with SSE
+  const startGeneration = useCallback(async (promptText: string) => {
+    if (!promptText.trim()) return;
+
+    // Close existing connection if any
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    setStatus('analyzing');
+    
+    // Reset steps
+    setSteps(prev => prev.map(step => ({ ...step, status: 'pending' as const })));
+
+    // Update session with new prompt
+    try {
+      await fetch(`/api/content/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText }),
+      });
+    } catch (err) {
+      console.error('Error updating prompt:', err);
+      setError('Failed to update prompt');
+      setIsGenerating(false);
       return;
     }
 
+    // Connect to SSE stream
     const eventSource = new EventSource(`/api/agent/generate?sessionId=${sessionId}`);
+    eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
       try {
@@ -79,16 +121,26 @@ export default function ContentDetailPage() {
           if (data.generatedContent) {
             setContent(data.generatedContent);
           }
+          // Update steps based on node history
+          if (data.metadata?.nodeHistory) {
+            updateStepsFromNodeHistory(data.metadata.nodeHistory);
+          }
         } else if (data.type === 'complete') {
           setStatus('completed');
           updateStepsFromStatus('completed');
           if (data.content) {
             setContent(data.content);
           }
+          setIsGenerating(false);
+          eventSource.close();
+          eventSourceRef.current = null;
         } else if (data.type === 'error') {
           setError(data.error);
           setStatus('error');
           updateStepsFromStatus('error');
+          setIsGenerating(false);
+          eventSource.close();
+          eventSourceRef.current = null;
         }
       } catch (err) {
         console.error('Failed to parse SSE message:', err);
@@ -96,13 +148,36 @@ export default function ContentDetailPage() {
     };
 
     eventSource.onerror = () => {
+      setIsGenerating(false);
       eventSource.close();
+      eventSourceRef.current = null;
     };
+  }, [sessionId]);
 
-    return () => {
-      eventSource.close();
-    };
-  }, [sessionId, status]);
+  const updateStepsFromNodeHistory = useCallback((nodeHistory: string[]) => {
+    setSteps((prev) => {
+      const newSteps = [...prev];
+      const nodeMap: Record<string, number> = {
+        'analyze': 0,
+        'search': 1,
+        'approval': 2,
+        'generate': 3,
+        'detectGraphs': 4,
+        'format': 5,
+        'save': 6,
+      };
+
+      // Mark all nodes in history as completed
+      nodeHistory.forEach((nodeName) => {
+        const stepIndex = nodeMap[nodeName];
+        if (stepIndex !== undefined) {
+          newSteps[stepIndex].status = 'completed';
+        }
+      });
+
+      return newSteps;
+    });
+  }, []);
 
   const updateStepsFromStatus = useCallback((currentStatus: WorkflowStatus) => {
     setSteps((prev) => {
@@ -116,23 +191,33 @@ export default function ContentDetailPage() {
           newSteps[0].status = 'completed';
           newSteps[1].status = 'active';
           break;
-        case 'generating':
+        case 'waiting_approval':
           newSteps[0].status = 'completed';
           newSteps[1].status = 'completed';
           newSteps[2].status = 'active';
+          break;
+        case 'generating':
+          newSteps[0].status = 'completed';
+          newSteps[1].status = 'completed';
+          newSteps[2].status = 'completed';
+          newSteps[3].status = 'active';
           break;
         case 'formatting':
           newSteps[0].status = 'completed';
           newSteps[1].status = 'completed';
           newSteps[2].status = 'completed';
-          newSteps[3].status = 'active';
+          newSteps[3].status = 'completed';
+          newSteps[4].status = 'completed';
+          newSteps[5].status = 'active';
           break;
         case 'saving':
           newSteps[0].status = 'completed';
           newSteps[1].status = 'completed';
           newSteps[2].status = 'completed';
           newSteps[3].status = 'completed';
-          newSteps[4].status = 'active';
+          newSteps[4].status = 'completed';
+          newSteps[5].status = 'completed';
+          newSteps[6].status = 'active';
           break;
         case 'completed':
           newSteps.forEach((step) => (step.status = 'completed'));
@@ -147,40 +232,6 @@ export default function ContentDetailPage() {
       return newSteps;
     });
   }, []);
-
-  const handlePromptSubmit = useCallback(async (newPrompt: string) => {
-    try {
-      setStatus('analyzing');
-      setError(null);
-      
-      // Update prompt in database
-      await fetch(`/api/content/sessions/${sessionId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: newPrompt }),
-      });
-
-      setPrompt(newPrompt);
-
-      // Start generation
-      const response = await fetch('/api/agent/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: newPrompt,
-          sessionId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start generation');
-      }
-    } catch (err) {
-      console.error('Error submitting prompt:', err);
-      setError('Failed to start generation');
-      setStatus('error');
-    }
-  }, [sessionId]);
 
   const handleSave = useCallback(async (newContent: string) => {
     try {
@@ -209,6 +260,19 @@ export default function ContentDetailPage() {
     // TODO: Implement suggestion rejection
   }, []);
 
+  const handleGenerateClick = useCallback(() => {
+    if (promptInput.trim() && !isGenerating) {
+      startGeneration(promptInput);
+    }
+  }, [promptInput, isGenerating, startGeneration]);
+
+  const handlePromptKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isGenerating) {
+      e.preventDefault();
+      handleGenerateClick();
+    }
+  }, [handleGenerateClick, isGenerating]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -220,7 +284,7 @@ export default function ContentDetailPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top Navigation */}
-      <div className="border-b bg-card px-4 py-3 flex items-center justify-between">
+      <div className="border-b bg-card px-4 py-3 flex items-center justify-between gap-4">
         <Button 
           variant="ghost" 
           onClick={() => router.push('/dashboard')}
@@ -229,6 +293,38 @@ export default function ContentDetailPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
+
+        {/* Prompt Input */}
+        <div className="flex-1 max-w-2xl flex items-center gap-2">
+          <div className="relative flex-1">
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={promptInput}
+              onChange={(e) => setPromptInput(e.target.value)}
+              onKeyDown={handlePromptKeyDown}
+              placeholder="Enter your prompt to generate or regenerate content..."
+              className="pl-10 pr-4"
+              disabled={isGenerating}
+            />
+          </div>
+          <Button 
+            onClick={handleGenerateClick}
+            disabled={!promptInput.trim() || isGenerating}
+            size="sm"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Generate
+              </>
+            )}
+          </Button>
+        </div>
 
         {error && (
           <div className="text-sm text-destructive">
@@ -248,11 +344,10 @@ export default function ContentDetailPage() {
         <div className="flex-1 min-w-0">
           <ContentEditor
             sessionId={sessionId}
-            initialPrompt={prompt}
             initialContent={content}
-            onPromptSubmit={handlePromptSubmit}
             onSave={handleSave}
-            isGenerating={!['idle', 'completed', 'error'].includes(status)}
+            autoSave={true}
+            autoSaveDelay={2000}
           />
         </div>
 

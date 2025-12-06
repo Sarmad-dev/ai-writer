@@ -1,3 +1,7 @@
+// DEPRECATED: This component is replaced by src/components/editor/ContentEditor.tsx
+// which uses TipTap for rich text editing instead of markdown rendering.
+// This file is kept for reference only.
+
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -13,7 +17,6 @@ import {
   Send,
   Sparkles
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ContentRendererProps {
   content: string;
@@ -32,7 +35,7 @@ function ContentRenderer({ content, isGenerating }: ContentRendererProps) {
   );
 }
 
-interface ContentEditorProps {
+interface LegacyContentEditorProps {
   sessionId: string;
   initialPrompt?: string;
   initialContent?: string;
@@ -41,14 +44,17 @@ interface ContentEditorProps {
   isGenerating: boolean;
 }
 
-export function ContentEditor({
+/**
+ * @deprecated Use ContentEditor from @/components/editor/ContentEditor instead
+ */
+export function LegacyContentEditor({
   sessionId,
   initialPrompt = '',
   initialContent = '',
   onPromptSubmit,
   onSave,
   isGenerating,
-}: ContentEditorProps) {
+}: LegacyContentEditorProps) {
   const [prompt, setPrompt] = useState(initialPrompt);
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
@@ -86,7 +92,7 @@ export function ContentEditor({
       <div className="border-b bg-card px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Content Editor</h2>
+          <h2 className="font-semibold">Content Editor (Legacy)</h2>
         </div>
         
         <div className="flex items-center gap-2">
