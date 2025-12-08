@@ -207,7 +207,13 @@ const MobileToolbarContent = ({
   </>
 );
 
-export function SimpleEditor({ content }: { content: string }) {
+export function SimpleEditor({ 
+  content,
+  onEditorReady,
+}: { 
+  content: string;
+  onEditorReady?: (editor: any) => void;
+}) {
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
@@ -282,6 +288,13 @@ export function SimpleEditor({ content }: { content: string }) {
       setMobileView("main");
     }
   }, [isMobile, mobileView]);
+
+  // Notify parent when editor is ready
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
 
   return (
     <div className="simple-editor-wrapper">

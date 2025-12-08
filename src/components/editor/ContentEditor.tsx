@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import type { Editor } from '@tiptap/react';
 import { useAutoSave } from './useAutoSave';
 import { Button } from '@/components/ui/button';
 import { Save, Loader2, FileText, Clock } from 'lucide-react';
@@ -14,14 +15,23 @@ interface ContentEditorProps {
   autoSaveDelay?: number;
 }
 
-export function ContentEditor({
-  initialContent = '',
-  onSave,
-  autoSave = true,
-  autoSaveDelay = 2000,
-}: ContentEditorProps) {
-  const [content, setContent] = useState(initialContent);
-  const [isSaving, setIsSaving] = useState(false);
+export interface ContentEditorRef {
+  getEditor: () => Editor | null;
+}
+
+export const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
+  function ContentEditor(
+    {
+      initialContent = '',
+      onSave,
+      autoSave = true,
+      autoSaveDelay = 2000,
+    },
+    ref
+  ) {
+    const [content, setContent] = useState(initialContent);
+    const [isSaving, setIsSaving] = useState(false);
+    const editorRef = useRef<Editor | null>(null);
 
 
   // Auto-save functionality
@@ -55,6 +65,11 @@ export function ContentEditor({
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return date.toLocaleDateString();
   };
+
+  // Expose editor instance to parent
+  useImperativeHandle(ref, () => ({
+    getEditor: () => editorRef.current,
+  }));
 
   return (
     <div className="flex flex-col h-full">
@@ -109,8 +124,8 @@ export function ContentEditor({
 
       {/* Editor Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <SimpleEditor content={content} />
+        <SimpleEditor content={content} onEditorReady={(editor) => (editorRef.current = editor)} />
       </div>
     </div>
   );
-}
+});

@@ -5,6 +5,10 @@ export {
   executeWorkflow,
   streamWorkflow,
   defaultWorkflowConfig,
+  streamEnhancedWorkflow,
+  createEnhancedInitialState,
+  createEnhancedWorkflow,
+  executeEnhancedWorkflow,
 } from './workflow';
 
 // Export types

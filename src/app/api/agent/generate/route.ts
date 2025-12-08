@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import { prisma } from '@/lib/db/prisma';
-import { streamWorkflow } from '@/lib/agent';
+import { streamEnhancedWorkflow } from '@/lib/agent';
 import type { MultimodalInput } from '@/lib/agent/types';
 
 export const runtime = 'nodejs';
@@ -86,8 +86,8 @@ export async function GET(req: NextRequest) {
 
           let stateCount = 0;
           
-          // Stream workflow execution
-          for await (const state of streamWorkflow(
+          // Stream enhanced workflow execution
+          for await (const state of streamEnhancedWorkflow(
             contentSession.id,
             contentSession.prompt!,
             userInputs
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
               status: state.status,
               hasContent: !!state.generatedContent,
               contentLength: state.generatedContent?.length || 0,
-              graphCount: state.graphs?.length || 0,
+              chartCount: state.charts?.length || 0,
               nodeHistory: state.metadata?.nodeHistory || [],
             });
             
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
               sessionId: contentSession.id,
               status: state.status || 'processing',
               generatedContent: state.generatedContent || '',
-              graphs: state.graphs || [],
+              charts: state.charts || [],
               error: state.error,
               metadata: state.metadata || {},
             });
@@ -223,8 +223,8 @@ export async function POST(req: NextRequest) {
 
           let stateCount = 0;
           
-          // Stream workflow execution
-          for await (const state of streamWorkflow(
+          // Stream enhanced workflow execution
+          for await (const state of streamEnhancedWorkflow(
             contentSession.id,
             prompt,
             userInputs
@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
               status: state.status,
               hasContent: !!state.generatedContent,
               contentLength: state.generatedContent?.length || 0,
-              graphCount: state.graphs?.length || 0,
+              chartCount: state.charts?.length || 0,
               nodeHistory: state.metadata?.nodeHistory || [],
             });
             
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
               sessionId: contentSession.id,
               status: state.status || 'processing',
               generatedContent: state.generatedContent || '',
-              graphs: state.graphs || [],
+              charts: state.charts || [],
               error: state.error,
               metadata: state.metadata || {},
             });

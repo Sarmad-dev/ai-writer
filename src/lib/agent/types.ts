@@ -44,6 +44,71 @@ export type WorkflowStatus =
   | 'completed' 
   | 'error';
 
+// Enhanced workflow types for the new workflow
+
+export type ContentType = 'technical' | 'report' | 'blog' | 'story' | 'academic' | 'business' | 'general';
+
+export interface ContentLocation {
+  paragraphIndex?: number;
+  headingContext?: string;
+  characterOffset?: number;
+  nodeId?: string;
+}
+
+export interface VocabularySuggestion {
+  id: string;
+  originalWord: string;
+  suggestedWord: string;
+  definition: string;
+  usageNote: string;
+  location: ContentLocation;
+  relevanceScore: number;
+}
+
+export interface GrammarIssue {
+  id: string;
+  type: 'grammar' | 'spelling' | 'style' | 'punctuation';
+  problematicText: string;
+  explanation: string;
+  correction: string;
+  location: ContentLocation;
+  severity: 'error' | 'warning' | 'suggestion';
+}
+
+export interface ContextualSuggestion {
+  id: string;
+  text: string;
+  type: 'addition' | 'expansion' | 'clarification' | 'example';
+  location: ContentLocation;
+  contextPreview: string;
+  relevanceScore: number;
+}
+
+export type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter';
+
+export interface ChartDataPoint {
+  [key: string]: string | number;
+}
+
+export interface ChartConfig {
+  title?: string;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  colors?: string[];
+  legend?: boolean;
+  dataKey?: string;
+  xKey?: string;
+  yKey?: string;
+}
+
+export interface ChartData {
+  id: string;
+  type: ChartType;
+  data: ChartDataPoint[];
+  config: ChartConfig;
+  location: ContentLocation;
+}
+
 // Main workflow state interface
 export interface WorkflowState {
   sessionId: string;
@@ -55,6 +120,26 @@ export interface WorkflowState {
   generatedContent: string;
   graphs: GraphData[];
   formattedContent: any; // TipTap JSON format
+  status: WorkflowStatus;
+  error?: string;
+  metadata: {
+    startTime: number;
+    endTime?: number;
+    nodeHistory: string[];
+    [key: string]: any; // Allow additional metadata fields
+  };
+}
+
+// Enhanced workflow state interface
+export interface EnhancedWorkflowState {
+  sessionId: string;
+  prompt: string;
+  contentType: ContentType;
+  userInputs: MultimodalInput[];
+  needsSearch: boolean;
+  searchResults: SearchResult[];
+  generatedContent: string;
+  charts: ChartData[];
   status: WorkflowStatus;
   error?: string;
   metadata: {

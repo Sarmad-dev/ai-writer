@@ -1,38 +1,50 @@
-import type { WorkflowState } from '../types';
+import type { WorkflowState, EnhancedWorkflowState } from '../types';
 import { prisma } from '../../db/prisma';
 
 /**
- * Save Node
- * Persists content to database and updates session status
+ * Save Node (Enhanced)
+ * Persists content to database with inline images and charts
  * 
  * This node:
- * 1. Saves generated content to the database
- * 2. Updates content session status to COMPLETED
- * 3. Saves graph data to the database
+ * 1. Saves generated content with inline images and charts to the database
+ * 2. Does NOT create separate Graph or Image records
+ * 3. Updates content session status to COMPLETED
  * 4. Triggers React Query cache invalidation (handled by API)
  */
-export async function saveNode(state: WorkflowState): Promise<Partial<WorkflowState>> {
+export async function saveNode(state: WorkflowState | EnhancedWorkflowState): Promise<Partial<WorkflowState | EnhancedWorkflowState>> {
   try {
-    const { sessionId, generatedContent, formattedContent, graphs } = state;
+    const { sessionId, generatedContent } = state;
 
-    // Update content session with generated content
+    // Check if this is an enhanced workflow state
+    const isEnhanced = 'suggestions' in state;
+
+    // Prepare update data
+    const updateData: any = {
+      content: generatedContent, // Store HTML content directly (not JSON stringified)
+      status: 'COMPLETED',
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        nodeHistory: state.metadata.nodeHistory,
+      },
+    };
+
+    // Add enhanced workflow fields if present
+    if (isEnhanced) {
+      const enhancedState = state as EnhancedWorkflowState;
+      
+      // Convert contentType to uppercase for Prisma enum
+      const contentType = enhancedState.contentType || 'general';
+      updateData.contentType = contentType.toUpperCase();
+    }
+
+    // Update content session with inline content
     await prisma.contentSession.update({
       where: { id: sessionId },
-      data: {
-        content: generatedContent,
-        status: 'COMPLETED',
-        metadata: {
-          formattedContent,
-          generatedAt: new Date().toISOString(),
-          nodeHistory: state.metadata.nodeHistory,
-        },
-      },
+      data: updateData,
     });
 
-    // Save graphs to database
-    if (graphs.length > 0) {
-      await saveGraphs(sessionId, graphs);
-    }
+    // Note: We do NOT create separate Graph or Image records
+    // All images and charts are stored inline in the content JSON
 
     return {
       status: 'completed',
@@ -75,45 +87,21 @@ export async function saveNode(state: WorkflowState): Promise<Partial<WorkflowSt
 }
 
 /**
- * Saves graphs to the database
+ * Helper function to get content session with inline content
+ * Note: Graphs and images are now stored inline in the content HTML
  */
-async function saveGraphs(
-  sessionId: string,
-  graphs: WorkflowState['graphs']
-): Promise<void> {
-  // Delete existing graphs for this session
-  await prisma.graph.deleteMany({
-    where: { contentSessionId: sessionId },
-  });
-
-  // Create new graphs
-  for (let i = 0; i < graphs.length; i++) {
-    const graph = graphs[i];
-    await prisma.graph.create({
-      data: {
-        contentSessionId: sessionId,
-        type: graph.type,
-        data: graph.data,
-        config: graph.config,
-        position: i,
-      },
-    });
-  }
-}
-
-/**
- * Helper function to get content session with graphs
- */
-export async function getContentSessionWithGraphs(sessionId: string) {
-  return await prisma.contentSession.findUnique({
+export async function getContentSession(sessionId: string) {
+  const session = await prisma.contentSession.findUnique({
     where: { id: sessionId },
-    include: {
-      graphs: {
-        orderBy: { position: 'asc' },
-      },
-      approvalRequests: {
-        orderBy: { createdAt: 'desc' },
-      },
-    },
   });
+
+  if (!session) {
+    return null;
+  }
+
+  // Content is stored as HTML string, no parsing needed
+  return {
+    ...session,
+    parsedContent: session.content,
+  };
 }

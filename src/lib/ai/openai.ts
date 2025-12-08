@@ -1,4 +1,8 @@
 import { env } from '../env';
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
+const client = new OpenAI();
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -10,6 +14,7 @@ export interface ChatCompletionOptions {
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
+  useWebSearch?: boolean;
 }
 
 /**
@@ -32,35 +37,66 @@ export class OpenAIClient {
     options: ChatCompletionOptions = {}
   ): Promise<string> {
     const {
-      model = 'gpt-5.1',
+      model = 'gpt-4o',
       temperature = 0.7,
-      maxTokens = 5000,
+      maxTokens = 16000,
+      useWebSearch = false,
     } = options;
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_completion_tokens: maxTokens,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+    // If web search is enabled, use responses.create API
+    if (useWebSearch) {
+      return this.createResponseWithWebSearch(messages, { model, temperature, maxTokens });
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
+    const response = await client.chat.completions.create({
+      model,
+      messages: messages as ChatCompletionMessageParam[],
+      temperature,
+      max_completion_tokens: maxTokens,
+    });
+    
+    const content = response.choices?.[0]?.message?.content || '';
 
     if (!content) {
-      throw new Error('No content generated from OpenAI');
+      console.error('No content in response. Full response:', response);
+      throw new Error(`No content generated from OpenAI. Response: ${JSON.stringify(response)}`);
+    }
+
+    return content;
+  }
+
+  /**
+   * Create a response using the responses.create API with web search capability
+   */
+  private async createResponseWithWebSearch(
+    messages: ChatMessage[],
+    options: { model: string; temperature: number; maxTokens: number }
+  ): Promise<string> {
+    const { model, temperature, maxTokens } = options;
+
+    // Convert messages to the input format expected by responses.create
+    // The responses API uses a different format with 'input' instead of 'messages'
+    const inputMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+      type: 'message' as const,
+    }));
+
+    const response = await client.responses.create({
+      model,
+      input: inputMessages,
+      tools: [
+        { type: 'web_search' as const },
+      ],
+      max_output_tokens: maxTokens,
+    });
+
+    // Extract text content from the response
+    const content = response.output_text || '';
+
+    if (!content) {
+      console.error('No content in response. Full response:', response);
+      throw new Error(`No content generated from OpenAI. Response: ${JSON.stringify(response)}`);
     }
 
     return content;
@@ -74,9 +110,9 @@ export class OpenAIClient {
     options: ChatCompletionOptions = {}
   ): AsyncGenerator<string> {
     const {
-      model = 'gpt-5.1',
+      model = 'gpt-4o',
       temperature = 0.7,
-      maxTokens = 5000,
+      maxTokens = 16000,
     } = options;
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {

@@ -32,11 +32,25 @@ export const GraphNode = Node.create({
       },
       type: {
         default: 'bar',
-        parseHTML: element => element.getAttribute('data-type'),
+        parseHTML: element => {
+          // First try to get type from config
+          const configStr = element.getAttribute('data-config');
+          if (configStr) {
+            try {
+              const config = JSON.parse(configStr);
+              if (config.type) {
+                return config.type;
+              }
+            } catch (e) {
+              console.error('Failed to parse config for type:', e);
+            }
+          }
+          // Fallback to default
+          return 'bar';
+        },
         renderHTML: attributes => {
-          return {
-            'data-type': attributes.type,
-          };
+          // Don't render type as data-type since that's used for node identification
+          return {};
         },
       },
       data: {

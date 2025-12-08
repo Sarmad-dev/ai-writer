@@ -1,29 +1,27 @@
 import { StateGraph, END, START, Annotation } from '@langchain/langgraph';
-import type { WorkflowState, WorkflowConfig } from './types';
+import type { WorkflowState, WorkflowConfig, EnhancedWorkflowState } from './types';
 import { analyzePromptNode } from './nodes/analyze-prompt';
+import { analyzePromptEnhancedNode } from './nodes/analyze-prompt-enhanced';
 import { webSearchNode } from './nodes/web-search';
-import { approvalNode } from './nodes/approval';
 import { generateContentNode } from './nodes/generate-content';
 import { graphGenerationNode } from './nodes/graph-generation';
-import { formatContentNode } from './nodes/format-content';
 import { saveNode } from './nodes/save';
 
 // Default workflow configuration
 export const defaultWorkflowConfig: WorkflowConfig = {
   maxSearchResults: 5,
-  approvalTimeout: 300000, // 5 minutes
-  llmModel: 'gpt-4-turbo-preview',
+  approvalTimeout: 300000, // 5 minutes (deprecated, kept for backward compatibility)
+  llmModel: 'gpt-5.1',
   temperature: 0.7,
 };
 
-// Define state annotation for LangGraph
+// Define state annotation for LangGraph (legacy workflow)
 const WorkflowStateAnnotation = Annotation.Root({
   sessionId: Annotation<string>,
   prompt: Annotation<string>,
   userInputs: Annotation<any[]>,
   needsSearch: Annotation<boolean>,
   searchResults: Annotation<any[]>,
-  pendingApproval: Annotation<any>,
   generatedContent: Annotation<string>,
   graphs: Annotation<any[]>,
   formattedContent: Annotation<any>,
@@ -32,7 +30,22 @@ const WorkflowStateAnnotation = Annotation.Root({
   metadata: Annotation<any>,
 });
 
-// Create the workflow graph
+// Enhanced workflow state annotation for LangGraph
+export const EnhancedWorkflowStateAnnotation = Annotation.Root({
+  sessionId: Annotation<string>,
+  prompt: Annotation<string>,
+  contentType: Annotation<string>,
+  userInputs: Annotation<any[]>,
+  needsSearch: Annotation<boolean>,
+  searchResults: Annotation<any[]>,
+  generatedContent: Annotation<string>,
+  charts: Annotation<any[]>,
+  status: Annotation<string>,
+  error: Annotation<string | undefined>,
+  metadata: Annotation<any>,
+});
+
+// Create the legacy workflow graph (with approval)
 export function createAgentWorkflow(config: WorkflowConfig = defaultWorkflowConfig) {
   // Define the state graph
   const workflow = new StateGraph(WorkflowStateAnnotation);
@@ -40,10 +53,8 @@ export function createAgentWorkflow(config: WorkflowConfig = defaultWorkflowConf
   // Add nodes to the workflow
   workflow.addNode('analyze', analyzePromptNode);
   workflow.addNode('search', webSearchNode);
-  workflow.addNode('approval', approvalNode);
   workflow.addNode('generate', generateContentNode);
   workflow.addNode('detectGraphs', graphGenerationNode);
-  workflow.addNode('format', formatContentNode);
   workflow.addNode('save', saveNode);
 
   // Use type assertion to work around LangGraph's strict typing
@@ -66,47 +77,14 @@ export function createAgentWorkflow(config: WorkflowConfig = defaultWorkflowConf
     }
   );
 
-  // After search, check if approval is needed
-  graph.addConditionalEdges(
-    'search',
-    (state: WorkflowState) => {
-      if (state.error) return 'end';
-      return state.pendingApproval ? 'approval' : 'generate';
-    },
-    {
-      approval: 'approval',
-      generate: 'generate',
-      end: END,
-    }
-  );
-
-  // After approval, decide next step based on approval status
-  graph.addConditionalEdges(
-    'approval',
-    (state: WorkflowState) => {
-      if (state.error) return 'end';
-      if (state.pendingApproval?.status === 'APPROVED') {
-        return 'generate';
-      } else if (state.pendingApproval?.status === 'REJECTED') {
-        // Skip search and go directly to generate
-        return 'generate';
-      }
-      return 'end';
-    },
-    {
-      generate: 'generate',
-      end: END,
-    }
-  );
+  // After search, go directly to generate (no approval)
+  graph.addEdge('search', 'generate');
 
   // After generate, detect if we need graphs
   graph.addEdge('generate', 'detectGraphs');
 
   // After graph detection, format the content
-  graph.addEdge('detectGraphs', 'format');
-
-  // After formatting, save to database
-  graph.addEdge('format', 'save');
+  graph.addEdge('detectGraphs', 'save');
 
   // After save, end the workflow
   graph.addEdge('save', END);
@@ -115,7 +93,51 @@ export function createAgentWorkflow(config: WorkflowConfig = defaultWorkflowConf
   return graph.compile();
 }
 
-// Helper function to create initial state
+// Create the enhanced workflow graph (no approval, with new nodes)
+export function createEnhancedWorkflow(config: WorkflowConfig = defaultWorkflowConfig) {
+  // Define the state graph with enhanced state annotation
+  const workflow = new StateGraph(EnhancedWorkflowStateAnnotation);
+
+  // Add nodes to the workflow
+  workflow.addNode('analyze', analyzePromptEnhancedNode);
+  workflow.addNode('search', webSearchNode);
+  workflow.addNode('generate', generateContentNode);
+  workflow.addNode('save', saveNode);
+
+  // Use type assertion to work around LangGraph's strict typing
+  const graph = workflow as any;
+
+  // Define the workflow edges and conditional routing
+  graph.addEdge(START, 'analyze');
+
+  // After analyze, decide if we need search
+  graph.addConditionalEdges(
+    'analyze',
+    (state: EnhancedWorkflowState) => {
+      if (state.error) return 'end';
+      return state.needsSearch ? 'search' : 'generate';
+    },
+    {
+      search: 'search',
+      generate: 'generate',
+      end: END,
+    }
+  );
+
+  // After search, go directly to generate
+  graph.addEdge('search', 'generate');
+
+  // After generate, save the content
+  graph.addEdge('generate', 'save');
+
+  // After save, end the workflow
+  graph.addEdge('save', END);
+
+  // Compile the workflow
+  return graph.compile();
+}
+
+// Helper function to create initial state (legacy)
 export function createInitialState(
   sessionId: string,
   prompt: string,
@@ -127,7 +149,6 @@ export function createInitialState(
     userInputs,
     needsSearch: false,
     searchResults: [],
-    pendingApproval: undefined,
     generatedContent: '',
     graphs: [],
     formattedContent: null,
@@ -140,7 +161,31 @@ export function createInitialState(
   };
 }
 
-// Helper function to execute the workflow
+// Helper function to create enhanced initial state
+export function createEnhancedInitialState(
+  sessionId: string,
+  prompt: string,
+  userInputs: EnhancedWorkflowState['userInputs'] = []
+): EnhancedWorkflowState {
+  return {
+    sessionId,
+    prompt,
+    contentType: 'general',
+    userInputs,
+    needsSearch: false,
+    searchResults: [],
+    generatedContent: '',
+    charts: [],
+    status: 'idle',
+    error: undefined,
+    metadata: {
+      startTime: Date.now(),
+      nodeHistory: [],
+    },
+  };
+}
+
+// Helper function to execute the workflow (legacy)
 export async function executeWorkflow(
   sessionId: string,
   prompt: string,
@@ -159,7 +204,26 @@ export async function executeWorkflow(
   }
 }
 
-// Helper function to stream workflow execution
+// Helper function to execute the enhanced workflow
+export async function executeEnhancedWorkflow(
+  sessionId: string,
+  prompt: string,
+  userInputs: EnhancedWorkflowState['userInputs'] = [],
+  config?: WorkflowConfig
+) {
+  const workflow = createEnhancedWorkflow(config);
+  const initialState = createEnhancedInitialState(sessionId, prompt, userInputs);
+
+  try {
+    const result = await workflow.invoke(initialState);
+    return result;
+  } catch (error) {
+    console.error('Enhanced workflow execution error:', error);
+    throw error;
+  }
+}
+
+// Helper function to stream workflow execution (legacy)
 export async function* streamWorkflow(
   sessionId: string,
   prompt: string,
@@ -186,6 +250,37 @@ export async function* streamWorkflow(
     }
   } catch (error) {
     console.error('Workflow streaming error:', error);
+    throw error;
+  }
+}
+
+// Helper function to stream enhanced workflow execution
+export async function* streamEnhancedWorkflow(
+  sessionId: string,
+  prompt: string,
+  userInputs: EnhancedWorkflowState['userInputs'] = [],
+  config?: WorkflowConfig
+) {
+  const workflow = createEnhancedWorkflow(config);
+  const initialState = createEnhancedInitialState(sessionId, prompt, userInputs);
+
+  try {
+    const stream = await workflow.stream(initialState);
+    for await (const chunk of stream) {
+      // LangGraph streams chunks with node names as keys
+      // Extract the actual state from the chunk
+      console.log('[streamEnhancedWorkflow] Chunk keys:', Object.keys(chunk));
+      
+      // Get the first (and usually only) value from the chunk
+      const nodeOutput = Object.values(chunk)[0];
+      
+      if (nodeOutput && typeof nodeOutput === 'object') {
+        // Yield the node output as EnhancedWorkflowState
+        yield nodeOutput as EnhancedWorkflowState;
+      }
+    }
+  } catch (error) {
+    console.error('Enhanced workflow streaming error:', error);
     throw error;
   }
 }
