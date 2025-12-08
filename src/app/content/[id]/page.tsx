@@ -29,7 +29,6 @@ interface GenerationStep {
 
 export default function ContentDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const sessionId = params.id as string;
 
   const [status, setStatus] = useState<WorkflowStatus>("idle");

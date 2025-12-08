@@ -14,6 +14,7 @@ import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 import { Selection } from "@tiptap/extensions";
 import { GraphNode } from "@/components/editor/extensions";
+import { CodeBlockNode } from "@/components/tiptap-node/code-block-node/code-block-node-extension";
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button";
@@ -236,11 +237,13 @@ export function SimpleEditor({
       extensions: [
         StarterKit.configure({
           horizontalRule: false,
+          codeBlock: false, // Disable default code block
           link: {
             openOnClick: false,
             enableClickSelection: true,
           },
         }),
+        CodeBlockNode, // Use custom code block with syntax highlighting
         TableKit.configure({
           table: {
             resizable: true, // Enable column resizing
