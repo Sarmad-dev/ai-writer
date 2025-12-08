@@ -1,20 +1,26 @@
 :root {
-  --tt-table-border-color: var(--tt-gray-light-a-300);
+  --tt-table-border-color: hsl(220, 13%, 91%);
+  --tt-table-header-bg: hsl(217, 91%, 60%);
+  --tt-table-header-text: hsl(0, 0%, 100%);
+  --tt-table-row-hover-bg: hsl(220, 13%, 97%);
   --tt-table-selected-bg: rgba(195, 189, 255, 0.4);
   --tt-table-selected-stroke: var(--tt-brand-color-400);
   --tt-table-column-resize-handle-bg: var(--tt-brand-color-400);
 
-  --tt-table-cell-padding: 0.5rem;
-  --tt-table-margin-block: 1.25rem;
+  --tt-table-cell-padding: 0.75rem;
+  --tt-table-margin-block: 1.5rem;
 
-  --tt-table-pad-block-start: 1rem; /* 8px */
-  --tt-table-pad-block-end: 1.5rem; /* 24px */
-  --tt-table-pad-inline-start: 1rem; /* 8px */
-  --tt-table-pad-inline-end: 1.5rem; /* 24px */
+  --tt-table-pad-block-start: 1rem;
+  --tt-table-pad-block-end: 1.5rem;
+  --tt-table-pad-inline-start: 1rem;
+  --tt-table-pad-inline-end: 1.5rem;
 }
 
 .dark {
-  --tt-table-border-color: var(--tt-gray-dark-a-300);
+  --tt-table-border-color: hsl(215, 16%, 25%);
+  --tt-table-header-bg: hsl(217, 70%, 38%);
+  --tt-table-header-text: hsl(0, 0%, 100%);
+  --tt-table-row-hover-bg: hsl(215, 16%, 15%);
   --tt-table-selected-bg: rgba(195, 189, 255, 0.2);
   --tt-table-selected-stroke: var(--tt-brand-color-400);
   --tt-table-column-resize-handle-bg: var(--tt-brand-color-400);
@@ -38,18 +44,43 @@
 .tiptap table {
   width: auto !important;
   word-break: break-word;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 .tiptap th,
 .tiptap td {
   border: 1px solid var(--tt-table-border-color);
   padding: var(--tt-table-cell-padding);
+  transition: background-color 150ms ease;
 }
 
 .tiptap table th {
-  background-color: var(--tt-gray-light-a-100);
-  font-weight: 700;
+  background-color: var(--tt-table-header-bg);
+  color: var(--tt-table-header-text);
+  font-weight: 600;
   text-align: left;
+  letter-spacing: 0.025em;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  border-color: var(--tt-table-header-bg);
+}
+
+.tiptap table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.tiptap table tbody tr:hover {
+  background-color: var(--tt-table-row-hover-bg);
+}
+
+.tiptap table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .tiptap table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .ProseMirror .column-resize-handle {

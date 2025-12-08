@@ -1,15 +1,17 @@
 .ProseMirror .tableWrapper {
   overflow-x: auto;
+  border-radius: 8px;
 }
 .ProseMirror table {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
   width: 100%;
   overflow: hidden;
 }
 .ProseMirror td,
 .ProseMirror th {
-  vertical-align: top;
+  vertical-align: middle;
   box-sizing: border-box;
   position: relative;
 }
@@ -27,14 +29,15 @@
   bottom: 0;
   width: 4px;
   z-index: 20;
-  background-color: #adf;
+  background-color: var(--tt-table-column-resize-handle-bg, hsl(217, 91%, 60%));
   pointer-events: none;
+  opacity: 0.8;
 }
 .ProseMirror.resize-cursor {
   cursor: ew-resize;
   cursor: col-resize;
 }
-/* Give selected cells a blue overlay */
+/* Give selected cells a styled overlay */
 .ProseMirror .selectedCell:after {
   z-index: 2;
   position: absolute;
@@ -43,6 +46,8 @@
   right: 0;
   top: 0;
   bottom: 0;
-  background: rgba(200, 200, 255, 0.4);
+  background: var(--tt-table-selected-bg, rgba(195, 189, 255, 0.4));
   pointer-events: none;
+  border: 2px solid var(--tt-table-selected-stroke, hsl(217, 91%, 60%));
+  border-radius: 2px;
 }
