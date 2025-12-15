@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useQueryState } from 'nuqs';
-import { ChatInput } from './ChatInput';
+import AiChatInput from './AiChatInput';
 import { MessageList } from './MessageList';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
@@ -185,11 +185,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b p-4 flex items-center gap-2">
-        <SidebarTrigger />
-        <h1 className="text-xl font-semibold">Chat</h1>
-      </div>
-
       <MessageList 
         messages={messages}
         streamingContent={streamingContent}
@@ -198,10 +193,12 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
         isLoading={isLoading}
       />
 
-      <ChatInput 
-        onSend={handleSendMessage}
-        disabled={isStreaming}
-      />
+      <div className="p-4 flex justify-center">
+        <AiChatInput 
+          onSend={handleSendMessage}
+          disabled={isStreaming}
+        />
+      </div>
     </div>
   );
 }

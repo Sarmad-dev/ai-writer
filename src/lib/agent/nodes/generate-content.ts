@@ -118,6 +118,27 @@ Examples:
 - For Python: <pre><code class="language-python">print('Hello')</code></pre>
 - For TypeScript: <pre><code class="language-typescript">const x: string = 'Hello';</code></pre>
 
+**Mathematical Equations:**
+For mathematical equations and formulas, use these special HTML tags with LaTeX syntax:
+
+For inline math (within text):
+<span data-type="math" data-latex="E = mc^2" data-display="inline"></span>
+
+For block math (centered, standalone equations):
+<div data-type="block-math" data-latex="\int_{0}^{\infty} e^{-x} dx = 1"></div>
+
+LaTeX Examples:
+- Greek letters: \alpha, \beta, \gamma, \Sigma, \Delta, \Omega
+- Fractions: \frac{a}{b}
+- Square roots: \sqrt{x^2 + y^2}
+- Integrals: \int_{a}^{b} f(x) dx
+- Summations: \sum_{i=1}^{n} i^2
+- Limits: \lim_{x \to \infty} \frac{1}{x}
+- Matrices: \begin{bmatrix} a & b \\ c & d \end{bmatrix}
+
+Use inline math for equations within sentences and block math for important standalone equations.
+Always use proper LaTeX syntax - escape special characters and use backslashes for commands.
+
 **Data Visualization:**
 If the content would benefit from data visualization (statistics, comparisons, trends, etc.), embed charts directly using this exact format:
 

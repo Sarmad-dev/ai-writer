@@ -1,0 +1,94 @@
+.math-node-wrapper {
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &.math-inline {
+    display: inline-block;
+    margin: 0 2px;
+    vertical-align: middle;
+  }
+  
+  &.math-block {
+    display: block;
+    margin: 1rem 0;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  &:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  &[data-editing="true"] {
+    background-color: rgba(0, 123, 255, 0.05);
+    border: 2px solid rgba(0, 123, 255, 0.3);
+    border-radius: 4px;
+    padding: 0.5rem;
+  }
+}
+
+.math-content {
+  display: inline-block;
+  padding: 2px 4px;
+  
+  &.math-error {
+    color: #cc0000;
+    border: 1px dashed #cc0000;
+    border-radius: 3px;
+    padding: 4px 6px;
+  }
+}
+
+.math-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.math-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  background-color: var(--background);
+  color: var(--foreground);
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+  }
+}
+
+.math-hint {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+.math-error-message {
+  font-size: 11px;
+  color: #cc0000;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .math-input {
+    border-color: #555;
+    
+    &:focus {
+      border-color: #4a9eff;
+    }
+  }
+  
+  .math-hint {
+    color: #aaa;
+  }
+}

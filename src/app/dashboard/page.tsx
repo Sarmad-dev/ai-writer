@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { signOut } from '@/lib/auth/auth-client';
-import { Button } from '@/components/ui/button';
-import { LogOut, User, MessageSquare, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { NewContentButton } from '@/components/dashboard/NewContentButton';
-import { ContentSessionList } from '@/components/dashboard/ContentSessionList';
-import Link from 'next/link';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { StatsCards } from '@/components/dashboard/StatsCards';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { ContentGrid } from '@/components/dashboard/ContentGrid';
+import { useCreateSession } from '@/lib/query/hooks/useContentSessions';
 
 export default function DashboardPage() {
   return (
@@ -21,69 +23,72 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { session } = useAuth();
   const router = useRouter();
+  const [isCreating, setIsCreating] = useState(false);
+  const createSession = useCreateSession();
 
-  const handleLogout = async () => {
-    await signOut();
-    router.push('/');
+  const handleNewContent = async () => {
+    if (isCreating) return;
+    
+    setIsCreating(true);
+    try {
+      const newSession = await createSession.mutateAsync({
+        title: 'Untitled Content',
+        prompt: '',
+      });
+      router.push(`/content/${newSession.id}`);
+    } catch (error) {
+      console.error('Failed to create content session:', error);
+      setIsCreating(false);
+    }
   };
 
+  const userName = session?.user?.email?.split('@')[0] || 'User';
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">AI Content Writer</h1>
+    <DashboardLayout>
+      <div className="flex flex-col h-full">
+        <DashboardHeader
+          title={`Welcome back, ${userName}!`}
+          subtitle="Here's what's happening with your AI content today"
+          onNewContent={handleNewContent}
+        />
+
+        <div className="flex-1 p-4 md:p-6 space-y-6 md:space-y-8 overflow-y-auto dashboard-scrollbar">
+          {/* Stats Overview */}
+          <section>
+            <StatsCards />
+          </section>
+
+          {/* Quick Actions and Activity Feed */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
+            {/* Left Column - Quick Actions */}
+            <div className="lg:col-span-3 xl:col-span-4">
+              <section>
+                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+                <QuickActions />
+              </section>
             </div>
-            
-            {/* Navigation & User Menu */}
-            <div className="flex items-center gap-4">
-              <Link href="/chat">
-                <Button variant="ghost" size="sm">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Chat
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Content
-                </Button>
-              </Link>
-              <div className="flex items-center gap-2 text-sm border-l pl-4">
-                <User className="h-4 w-4" />
-                <span>{session?.user?.email}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
+
+            {/* Right Column - Activity Feed */}
+            <div className="lg:col-span-1">
+              <section>
+                <RecentActivity />
+              </section>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Your Content Sessions</h2>
-          <p className="text-muted-foreground">
-            Manage and create AI-generated content
-          </p>
+          {/* Full Width Recent Content Section */}
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Recent Content</h2>
+              <button className="text-sm text-primary hover:underline transition-colors">
+                View all
+              </button>
+            </div>
+            <ContentGrid />
+          </section>
         </div>
-
-        <div className="space-y-6">
-          <div className="flex justify-start">
-            <NewContentButton />
-          </div>
-          <ContentSessionList />
-        </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

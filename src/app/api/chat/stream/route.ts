@@ -169,8 +169,128 @@ export async function POST(req: NextRequest) {
           }));
 
           const systemPrompt = searchContext
-            ? 'You are a helpful AI assistant with access to web search results. Provide clear, concise, and accurate responses based on the search results when available. Always cite sources using markdown links like [Source Name](URL) when using information from search results. Format your responses in markdown when appropriate.'
-            : 'You are a helpful AI assistant. Provide clear, concise, and accurate responses. Format your responses in markdown when appropriate.';
+            ? `You are a helpful AI assistant with access to web search results. Provide clear, concise, and accurate responses based on the search results when available. Always cite sources using markdown links like [Source Name](URL) when using information from search results. 
+
+Format your responses in markdown when appropriate.
+
+**For Mathematical Equations:**
+When including mathematical equations or formulas, use standard LaTeX delimiters:
+- Inline math: $E = mc^2$ (single dollar signs)
+- Block math: $$\\int_{0}^{\\infty} e^{-x} dx = 1$$ (double dollar signs on separate lines)
+
+Use proper LaTeX syntax with backslashes for Greek letters (\\alpha, \\beta, \\Sigma), fractions (\\frac{a}{b}), integrals (\\int), summations (\\sum), etc.
+
+**For Data Visualizations (Charts and Graphs):**
+When creating charts, graphs, or data visualizations, use Python code blocks. The system will automatically detect and execute chart-generating code, providing both interactive and static versions:
+
+\`\`\`python
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Sample data
+products = ['Product A', 'Product B', 'Product C']
+sales = [45, 30, 25]
+colors = ['#3b82f6', '#10b981', '#f59e0b']
+
+# Create bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(products, sales, color=colors)
+plt.title('Sales Distribution')
+plt.xlabel('Products')
+plt.ylabel('Sales')
+plt.show()
+\`\`\`
+
+Charts are rendered with interactive capabilities (zoom, hover, pan) and users can toggle between interactive and static views.
+
+**CRITICAL**: Each Python code block is executed independently in a separate sandbox. Always include ALL necessary imports (matplotlib.pyplot, numpy, pandas, seaborn, etc.) at the beginning of EVERY code block, even if you used them in previous blocks in the same response.
+
+**For Regular Python Code:**
+Use standard Python code blocks for non-visualization code:
+
+\`\`\`python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(10))
+\`\`\`
+
+The system automatically detects chart-generating code (matplotlib, seaborn, plotly) and executes it in a sandbox. Regular Python code is displayed as syntax-highlighted code blocks.
+
+**For Diagrams and Flowcharts:**
+Use Mermaid for flowcharts, sequence diagrams, and process flows:
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+\`\`\`
+
+Use Python for data visualization and Mermaid for process/workflow diagrams.`
+            : `You are a helpful AI assistant. Provide clear, concise, and accurate responses. 
+
+Format your responses in markdown when appropriate.
+
+**For Mathematical Equations:**
+When including mathematical equations or formulas, use standard LaTeX delimiters:
+- Inline math: $E = mc^2$ (single dollar signs)
+- Block math: $$\\int_{0}^{\\infty} e^{-x} dx = 1$$ (double dollar signs on separate lines)
+
+Use proper LaTeX syntax with backslashes for Greek letters (\\alpha, \\beta, \\Sigma), fractions (\\frac{a}{b}), integrals (\\int), summations (\\sum), etc.
+
+**For Data Visualizations (Charts and Graphs):**
+When creating charts, graphs, or data visualizations, use Python code blocks. The system will automatically detect and execute chart-generating code, providing both interactive and static versions:
+
+\`\`\`python
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Sample data
+products = ['Product A', 'Product B', 'Product C']
+sales = [45, 30, 25]
+colors = ['#3b82f6', '#10b981', '#f59e0b']
+
+# Create bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(products, sales, color=colors)
+plt.title('Sales Distribution')
+plt.xlabel('Products')
+plt.ylabel('Sales')
+plt.show()
+\`\`\`
+
+Charts are rendered with interactive capabilities (zoom, hover, pan) and users can toggle between interactive and static views.
+
+**CRITICAL**: Each Python code block is executed independently in a separate sandbox. Always include ALL necessary imports (matplotlib.pyplot, numpy, pandas, seaborn, etc.) at the beginning of EVERY code block, even if you used them in previous blocks in the same response.
+
+**For Regular Python Code:**
+Use standard Python code blocks for non-visualization code:
+
+\`\`\`python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(10))
+\`\`\`
+
+The system automatically detects chart-generating code (matplotlib, seaborn, plotly) and executes it in a sandbox. Regular Python code is displayed as syntax-highlighted code blocks.
+
+**For Diagrams and Flowcharts:**
+Use Mermaid for flowcharts, sequence diagrams, and process flows:
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+\`\`\`
+
+Use Python for data visualization and Mermaid for process/workflow diagrams.`;
 
           const userMessage = searchContext
             ? `${message}${searchContext}`
@@ -249,5 +369,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-

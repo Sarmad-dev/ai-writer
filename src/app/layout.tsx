@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/lib/query/QueryProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
                 disableTransitionOnChange
               >
                 {children}
+              <Toaster richColors />
               </ThemeProvider>
             </QueryProvider>
           </AuthProvider>

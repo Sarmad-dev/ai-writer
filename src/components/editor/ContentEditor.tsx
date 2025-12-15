@@ -29,25 +29,24 @@ export const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
     },
     ref
   ) {
-    const [content, setContent] = useState(initialContent);
     const [isSaving, setIsSaving] = useState(false);
     const editorRef = useRef<Editor | null>(null);
 
 
   // Auto-save functionality
   const { isSaving: isAutoSaving, lastSaved, saveStatus } = useAutoSave({
-    content,
+    content: initialContent,
     onSave: onSave || (async () => {}),
     delay: autoSaveDelay,
     enabled: autoSave && !!onSave,
   });
 
   const handleManualSave = async () => {
-    if (!onSave || !content) return;
+    if (!onSave || !initialContent) return;
 
     setIsSaving(true);
     try {
-      await onSave(content);
+      await onSave(initialContent);
     } catch (error) {
       console.error('Failed to save content:', error);
     } finally {
@@ -124,7 +123,7 @@ export const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
 
       {/* Editor Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <SimpleEditor content={content} onEditorReady={(editor) => (editorRef.current = editor)} />
+        <SimpleEditor content={initialContent} onEditorReady={(editor) => (editorRef.current = editor)} />
       </div>
     </div>
   );

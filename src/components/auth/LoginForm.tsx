@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { signIn } from '@/lib/auth/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { signIn } from "@/lib/auth/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -15,31 +15,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "@/components/ui/form";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText,
+} from "../ui/input-group";
+import { AtSignIcon, Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
+import { LoginFormData, loginSchema } from "@/lib/validation/auth";
+import { AuthFormParams } from "@/lib/auth/types";
+import { toast } from "sonner";
+import Spinner from "../ui/spinner";
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export function LoginForm() {
+export function LoginForm({
+  showPassword,
+  setShowPassword,
+  setIsSubmitting,
+}: AuthFormParams) {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string>('');
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setServerError('');
-
+    setIsSubmitting(true);
     try {
       const response = await signIn.email({
         email: data.email,
@@ -47,65 +53,99 @@ export function LoginForm() {
       });
 
       if (response.error) {
-        setServerError(response.error.message || 'Invalid credentials');
+        toast.error(response.error.message || "Invalid credentials");
       } else {
-        // Redirect to dashboard on success
-        router.push('/dashboard');
+        toast.success(
+          `${
+            response.data.user.name || response.data.user.email
+          } Signed in Successfully`
+        );
+        router.push("/dashboard");
       }
     } catch (error) {
-      setServerError('An unexpected error occurred. Please try again.');
+      toast.error("An unexpected error occurred. Please try again.");
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Enter your credentials to access your account</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <p className="text-start text-muted-foreground text-xs">
+          Enter your email address to sign in
+        </p>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <InputGroup>
+                  <InputGroupInput
+                    placeholder="your.email@example.com"
+                    type="email"
+                    {...field}
+                  />
+                  <InputGroupAddon>
+                    <InputGroupText>
+                      <AtSignIcon />
+                    </InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <InputGroup>
+                  <InputGroupInput
+                    placeholder="********"
+                    type={showPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <InputGroupAddon>
+                    <InputGroupText>
+                      <LockKeyhole />
+                    </InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            {serverError && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950 rounded-md">
-                {serverError}
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'Logging in...' : 'Login'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <Button
+          type="submit"
+          className="w-full cursor-pointer"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting ? (
+            <Spinner text="Logging in" />
+          ) : (
+            "Login"
+          )}
+        </Button>
+      </form>
+    </Form>
   );
 }

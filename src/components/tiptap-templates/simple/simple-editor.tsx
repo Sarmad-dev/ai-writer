@@ -15,6 +15,7 @@ import { Superscript } from "@tiptap/extension-superscript";
 import { Selection } from "@tiptap/extensions";
 import { GraphNode } from "@/components/editor/extensions";
 import { CodeBlockNode } from "@/components/tiptap-node/code-block-node/code-block-node-extension";
+import { MathNode, BlockMathNode } from "@/components/tiptap-node/math-node";
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button";
@@ -35,6 +36,7 @@ import "@/components/tiptap-node/list-node/list-node.scss";
 import "@/components/tiptap-node/image-node/image-node.scss";
 import "@/components/tiptap-node/heading-node/heading-node.scss";
 import "@/components/tiptap-node/paragraph-node/paragraph-node.scss";
+import "@/components/tiptap-node/math-node/math-node.scss";
 
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu";
@@ -56,6 +58,7 @@ import { MarkButton } from "@/components/tiptap-ui/mark-button";
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button";
 import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button";
 import { ChartButton } from "@/components/tiptap-ui/chart-button";
+import { MathDropdownMenu } from "@/components/tiptap-ui/math-dropdown-menu";
 
 import { TextStyle } from "@tiptap/extension-text-style";
 
@@ -162,6 +165,7 @@ const MainToolbarContent = ({
       <ToolbarGroup>
         <ImageUploadButton text="Add" />
         <ChartButton />
+        <MathDropdownMenu portal={isMobile} />
       </ToolbarGroup>
 
       <Spacer />
@@ -275,6 +279,8 @@ export function SimpleEditor({
           onError: (error) => console.error("Upload failed:", error),
         }),
         GraphNode, // Add graph/chart support
+        MathNode, // Add inline math support
+        BlockMathNode, // Add block math support
       ],
       content,
     },

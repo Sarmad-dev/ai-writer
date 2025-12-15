@@ -1,0 +1,222 @@
+/* Dashboard specific styles */
+
+/* Prevent layout shift and blinking */
+.dashboard-sidebar {
+  will-change: width;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Smooth transitions without blinking */
+.dashboard-sidebar * {
+  backface-visibility: hidden;
+}
+
+/* Prevent text selection during animations */
+.dashboard-sidebar.transitioning {
+  user-select: none;
+  pointer-events: none;
+}
+
+.dashboard-sidebar.transitioning * {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Ensure smooth hover effects */
+.dashboard-nav-item {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prevent content jumping */
+.dashboard-main {
+  will-change: margin-left;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Smooth card animations */
+.dashboard-card {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Prevent blinking on hover */
+.dashboard-card:hover {
+  transform: translateY(-4px) translateZ(0);
+}
+
+/* Optimize text rendering */
+.dashboard-text {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Beautiful Custom Scrollbars */
+.dashboard-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4));
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.6));
+  transform: scaleX(1.2);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Thin scrollbar for activity feed */
+.activity-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.activity-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activity-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.activity-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(156, 163, 175, 0.3), rgba(156, 163, 175, 0.4));
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.activity-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(156, 163, 175, 0.5), rgba(156, 163, 175, 0.6));
+  transform: scaleX(1.5);
+}
+
+/* Sidebar scrollbar - ultra thin */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.2) transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+/* CSS-based entrance animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation utilities */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.slide-in-from-bottom-4 {
+  animation-name: slide-in-from-bottom;
+}
+
+.slide-in-from-left-4 {
+  animation-name: slide-in-from-left;
+}
+
+.scale-in-95 {
+  animation-name: scale-in;
+}
+
+/* Smooth hover transitions */
+.hover\:-translate-y-1:hover {
+  transform: translateY(-4px) translateZ(0);
+}
+
+.hover\:scale-\[1\.02\]:hover {
+  transform: scale(1.02) translateZ(0);
+}
+
+.active\:scale-\[0\.98\]:active {
+  transform: scale(0.98) translateZ(0);
+}

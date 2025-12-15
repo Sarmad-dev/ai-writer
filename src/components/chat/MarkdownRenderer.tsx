@@ -23,6 +23,40 @@ const MermaidRenderer = lazy(() =>
   import('./MermaidRenderer').then((mod) => ({ default: mod.MermaidRenderer }))
 );
 
+const ChartRenderer = lazy(() =>
+  import('./ChartRenderer').then((mod) => ({ default: mod.ChartRenderer }))
+);
+
+// Helper function to detect if Python code generates charts/plots
+function isChartGeneratingCode(code: string): boolean {
+  const chartIndicators = [
+    'plt.show()',
+    'plt.plot(',
+    'plt.bar(',
+    'plt.scatter(',
+    'plt.hist(',
+    'plt.pie(',
+    'plt.figure(',
+    'plt.subplot(',
+    'sns.plot',
+    'sns.bar',
+    'sns.scatter',
+    'sns.hist',
+    'sns.box',
+    'sns.heat',
+    'plotly.graph',
+    'go.Figure',
+    'px.',
+    'fig.show()',
+    'matplotlib',
+    'seaborn',
+    'plotly'
+  ];
+  
+  const lowerCode = code.toLowerCase();
+  return chartIndicators.some(indicator => lowerCode.includes(indicator.toLowerCase()));
+}
+
 interface MarkdownRendererProps {
   content: string;
   isStreaming?: boolean;
@@ -162,6 +196,16 @@ export const MarkdownRenderer = React.memo(function MarkdownRenderer({
               return (
                 <Suspense fallback={<Skeleton className="w-full h-64 rounded-lg my-4" />}>
                   <MermaidRenderer chart={codeString} />
+                </Suspense>
+              );
+            }
+            
+            // Check if it's Python chart code (explicit or auto-detected)
+            if (language === 'python-chart' || language === 'chart' || 
+                (language === 'python' && isChartGeneratingCode(codeString))) {
+              return (
+                <Suspense fallback={<Skeleton className="w-full h-96 rounded-lg my-4" />}>
+                  <ChartRenderer code={codeString} />
                 </Suspense>
               );
             }

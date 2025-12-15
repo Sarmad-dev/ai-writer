@@ -1,5 +1,4 @@
 export { LandingPage } from './LandingPage';
-export { HeroSection } from './HeroSection';
-export { FeaturesSection } from './FeaturesSection';
-export { TestimonialsSection } from './TestimonialsSection';
-export { CTASection } from './CTASection';
+export { SponsorsSection } from './sponsor/SponsorsSection';
+export { TestimonialsSection } from './testimonials/TestimonialsSection';
+export { BentoGrid, BentoCard } from './BentoGrid';
