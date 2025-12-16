@@ -1,0 +1,123 @@
+/* Slash Command Menu Styles */
+.slash-command-menu {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 280px;
+  z-index: 1000;
+
+  .dark & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover,
+    &.selected {
+      background: #f1f5f9;
+
+      .dark & {
+        background: #374151;
+      }
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      color: #6b7280;
+      flex-shrink: 0;
+    }
+
+    .content {
+      .title {
+        font-weight: 500;
+        font-size: 14px;
+        color: #111827;
+        margin-bottom: 2px;
+
+        .dark & {
+          color: #f9fafb;
+        }
+      }
+
+      .description {
+        font-size: 12px;
+        color: #6b7280;
+
+        .dark & {
+          color: #9ca3af;
+        }
+      }
+    }
+  }
+
+  .no-results {
+    padding: 12px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+
+    .dark & {
+      color: #9ca3af;
+    }
+  }
+}
+
+/* Tippy.js theme overrides */
+.tippy-box[data-theme~="slash-command"] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.tippy-box[data-theme~="slash-command"] .tippy-content {
+  padding: 0;
+}
+
+/* Slash command trigger indicator */
+.slash-command-trigger {
+  position: relative;
+  
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 100%;
+    background: #3b82f6;
+    animation: blink 1s infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Ensure slash command menu appears above other elements */
+.slash-command-menu {
+  position: fixed !important;
+  z-index: 9999 !important;
+}

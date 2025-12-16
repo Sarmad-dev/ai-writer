@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react";
 
 // --- Tiptap Core Extensions ---
@@ -64,6 +64,8 @@ import { TextStyle } from "@tiptap/extension-text-style";
 
 import { NodeBackground } from "@/components/tiptap-extension/node-background-extension";
 import { NodeAlignment } from "@/components/tiptap-extension/node-alignment-extension";
+import { SlashCommandMenu } from "@/components/tiptap-ui/slash-command-menu";
+import { useSlashCommand } from "@/hooks/use-slash-command";
 
 import { TableKit } from "@/components/tiptap-node/table-node/extensions/table-node-extension";
 import { TableHandleExtension } from "@/components/tiptap-node/table-node/extensions/table-handle";
@@ -96,6 +98,7 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
+import "@/components/tiptap-extension/slash-command.scss";
 import { SlashCommandTriggerButton } from "@/components/tiptap-ui/slash-command-trigger-button";
 
 const MainToolbarContent = ({
@@ -305,6 +308,9 @@ export function SimpleEditor({
     }
   }, [editor, onEditorReady]);
 
+  // Slash command functionality
+  const slashCommand = useSlashCommand({ editor });
+
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
@@ -351,14 +357,23 @@ export function SimpleEditor({
         />
         <TableExtendRowColumnButtons />
 
-        {/* <SlashCommandTriggerButton
+        <SlashCommandTriggerButton
           editor={editor}
           text="Insert Block"
           trigger="/"
           hideWhenUnavailable={true}
           showShortcut={true}
           onTriggered={(trigger) => console.log("Inserted:", trigger)}
-        /> */}
+        />
+
+        <SlashCommandMenu
+          editor={editor!}
+          isOpen={slashCommand.isOpen}
+          onClose={slashCommand.closeMenu}
+          position={slashCommand.position}
+          query={slashCommand.query}
+          range={slashCommand.range}
+        />
       </EditorContext.Provider>
     </div>
   );
