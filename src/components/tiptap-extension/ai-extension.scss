@@ -1,0 +1,176 @@
+/* AI Extension Styles */
+
+/* AI Loading States */
+.ai-loading {
+  position: relative;
+  opacity: 0.7;
+  
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: ai-loading 1.5s infinite;
+  }
+}
+
+@keyframes ai-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* AI Selection Menu */
+.ai-selection-menu {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+  animation: ai-menu-appear 0.2s ease-out;
+  backdrop-filter: blur(8px);
+
+  .dark & {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Input styling */
+  input {
+    transition: all 0.2s ease;
+    
+    &:focus {
+      outline: none;
+      ring: 2px solid #3b82f6;
+      border-color: transparent;
+    }
+  }
+
+  /* Button hover effects */
+  button {
+    transition: all 0.15s ease;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+    
+    .dark & {
+      background: #4b5563;
+    }
+  }
+}
+
+@keyframes ai-menu-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-100%) scale(1);
+  }
+}
+
+/* AI Toolbar Buttons */
+.ai-toolbar-button {
+  position: relative;
+  
+  &.ai-active {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    
+    &::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 6px;
+      height: 6px;
+      background: #3b82f6;
+      border-radius: 50%;
+      animation: ai-pulse 2s infinite;
+    }
+  }
+}
+
+@keyframes ai-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* AI Generation Indicator */
+.ai-generating {
+  position: relative;
+  
+  &::before {
+    content: "✨ AI is writing...";
+    position: absolute;
+    top: -30px;
+    left: 0;
+    background: #3b82f6;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    animation: ai-typing 1s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes ai-typing {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Keyboard shortcuts display */
+.ai-shortcut-hint {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #64748b;
+
+  .dark & {
+    background: #374151;
+    border-color: #4b5563;
+    color: #9ca3af;
+  }
+}

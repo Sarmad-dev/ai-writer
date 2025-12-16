@@ -1,8 +1,13 @@
-import { env } from '../env';
+// Load environment variables first
+if (typeof window === 'undefined') {
+  try {
+    require('dotenv').config();
+  } catch (error) {
+    console.warn('dotenv not available');
+  }
+}
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-
-const client = new OpenAI();
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -23,10 +28,25 @@ export interface ChatCompletionOptions {
 export class OpenAIClient {
   private apiKey: string;
   private baseUrl: string;
+  private client: OpenAI;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || env.OPENAI_API_KEY;
+    this.apiKey = apiKey || process.env.OPENAI_API_KEY || '';
     this.baseUrl = 'https://api.openai.com/v1';
+    
+    // Debug: Check if API key is available
+    if (!this.apiKey) {
+      console.error('❌ OpenAI API Key is missing!');
+      console.error('process.env.OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
+      throw new Error('OpenAI API key is required but not found in environment variables');
+    }
+    
+    console.log('✅ OpenAI client initialized with API key');
+    
+    // Initialize OpenAI client with API key
+    this.client = new OpenAI({
+      apiKey: this.apiKey,
+    });
   }
 
   /**
@@ -48,7 +68,7 @@ export class OpenAIClient {
       return this.createResponseWithWebSearch(messages, { model, temperature, maxTokens });
     }
 
-    const response = await client.chat.completions.create({
+    const response = await this.client.chat.completions.create({
       model,
       messages: messages as ChatCompletionMessageParam[],
       temperature,
@@ -82,7 +102,7 @@ export class OpenAIClient {
       type: 'message' as const,
     }));
 
-    const response = await client.responses.create({
+    const response = await this.client.responses.create({
       model,
       input: inputMessages,
       tools: [
@@ -171,5 +191,5 @@ export class OpenAIClient {
   }
 }
 
-// Default OpenAI client instance
-export const openai = new OpenAIClient();
+// Default OpenAI client instance (server-side only)
+export const openai = typeof window === 'undefined' ? new OpenAIClient() : null as any;

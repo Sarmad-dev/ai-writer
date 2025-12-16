@@ -17,16 +17,15 @@ import {
   Minus,
   CheckSquare,
 } from "lucide-react";
-
 export interface SlashCommandItem {
   title: string;
   description: string;
   icon: React.ComponentType<any>;
-  command: (editor: Editor) => void;
+  command: (editor: Editor) => void | boolean | Promise<void>;
   keywords?: string[];
 }
 
-export const defaultSlashCommands: SlashCommandItem[] = [
+const basicSlashCommands: SlashCommandItem[] = [
   {
     title: "Heading 1",
     description: "Large section heading",
@@ -99,6 +98,9 @@ export const defaultSlashCommands: SlashCommandItem[] = [
   },
 ];
 
+// Use only basic commands for slash menu
+export const defaultSlashCommands: SlashCommandItem[] = basicSlashCommands;
+
 export interface SlashCommandMenuProps {
   editor: Editor;
   isOpen: boolean;
@@ -130,12 +132,16 @@ export function SlashCommandMenu({
     setSelectedIndex(0);
   }, [query]);
 
-  const executeCommand = useCallback((item: SlashCommandItem) => {
+  const executeCommand = useCallback(async (item: SlashCommandItem) => {
     // Remove the slash and query text
     editor.chain().focus().deleteRange(range).run();
     
-    // Execute the command
-    item.command(editor);
+    // Execute the command (handle both sync and async)
+    try {
+      await item.command(editor);
+    } catch (error) {
+      console.error("Command execution failed:", error);
+    }
     
     onClose();
   }, [editor, range, onClose]);

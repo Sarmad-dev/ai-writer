@@ -64,8 +64,12 @@ import { TextStyle } from "@tiptap/extension-text-style";
 
 import { NodeBackground } from "@/components/tiptap-extension/node-background-extension";
 import { NodeAlignment } from "@/components/tiptap-extension/node-alignment-extension";
+import { AIExtension } from "@/components/tiptap-extension/ai-extension";
 import { SlashCommandMenu } from "@/components/tiptap-ui/slash-command-menu";
+import { AIToolbarButtons } from "@/components/tiptap-ui/ai-toolbar";
+import { AISelectionMenu } from "@/components/tiptap-ui/ai-selection-menu";
 import { useSlashCommand } from "@/hooks/use-slash-command";
+import { useAISelectionMenu } from "@/hooks/use-ai-selection-menu";
 
 import { TableKit } from "@/components/tiptap-node/table-node/extensions/table-node-extension";
 import { TableHandleExtension } from "@/components/tiptap-node/table-node/extensions/table-handle";
@@ -99,16 +103,19 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
 import "@/components/tiptap-extension/slash-command.scss";
+import "@/components/tiptap-extension/ai-extension.scss";
 import { SlashCommandTriggerButton } from "@/components/tiptap-ui/slash-command-trigger-button";
 
 const MainToolbarContent = ({
   onHighlighterClick,
   onLinkClick,
   isMobile,
+  editor,
 }: {
   onHighlighterClick: () => void;
   onLinkClick: () => void;
   isMobile: boolean;
+  editor: any;
 }) => {
   return (
     <div className="flex items-center justify-center overflow-x-auto bg-background fixed -mt-3">
@@ -170,6 +177,14 @@ const MainToolbarContent = ({
         <ChartButton />
         <MathDropdownMenu portal={isMobile} />
       </ToolbarGroup>
+
+      <ToolbarSeparator />
+
+      {editor && (
+        <ToolbarGroup>
+          <AIToolbarButtons editor={editor} />
+        </ToolbarGroup>
+      )}
 
       <Spacer />
 
@@ -284,6 +299,11 @@ export function SimpleEditor({
         GraphNode, // Add graph/chart support
         MathNode, // Add inline math support
         BlockMathNode, // Add block math support
+        AIExtension.configure({
+          model: "gpt-4o",
+          temperature: 0.7,
+          maxTokens: 2000,
+        }), // Add AI capabilities
       ],
       content,
     },
@@ -310,6 +330,13 @@ export function SimpleEditor({
 
   // Slash command functionality
   const slashCommand = useSlashCommand({ editor });
+  
+  // AI selection menu functionality (shows when text is selected)
+  const aiSelectionMenu = useAISelectionMenu({ 
+    editor,
+    autoShowOnSelection: true,
+    minSelectionLength: 5 // Only show for selections of 5+ characters
+  });
 
   return (
     <div className="simple-editor-wrapper">
@@ -330,6 +357,7 @@ export function SimpleEditor({
               onHighlighterClick={() => setMobileView("highlighter")}
               onLinkClick={() => setMobileView("link")}
               isMobile={isMobile}
+              editor={editor}
             />
           ) : (
             <MobileToolbarContent
@@ -366,14 +394,27 @@ export function SimpleEditor({
           onTriggered={(trigger) => console.log("Inserted:", trigger)}
         />
 
-        <SlashCommandMenu
-          editor={editor!}
-          isOpen={slashCommand.isOpen}
-          onClose={slashCommand.closeMenu}
-          position={slashCommand.position}
-          query={slashCommand.query}
-          range={slashCommand.range}
-        />
+        {editor && (
+          <SlashCommandMenu
+            editor={editor}
+            isOpen={slashCommand.isOpen}
+            onClose={slashCommand.closeMenu}
+            position={slashCommand.position}
+            query={slashCommand.query}
+            range={slashCommand.range}
+          />
+        )}
+
+        {editor && (
+          <AISelectionMenu
+            editor={editor}
+            isVisible={aiSelectionMenu.isVisible}
+            position={aiSelectionMenu.position}
+            selectedText={aiSelectionMenu.selectedText}
+            range={aiSelectionMenu.range}
+            onClose={aiSelectionMenu.hideMenu}
+          />
+        )}
       </EditorContext.Provider>
     </div>
   );

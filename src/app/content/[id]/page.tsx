@@ -1,8 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Loader2,
@@ -16,9 +15,9 @@ import {
   ContentEditor,
   type ContentEditorRef,
 } from "@/components/editor/ContentEditor";
-import type {
-  WorkflowStatus,
-} from "@/lib/agent/types";
+import type { WorkflowStatus } from "@/lib/agent/types";
+import { ContentSidebar } from "@/components/content/ContentSidebar";
+import { EditorHeader } from "@/components/content/EditorHeader";
 
 interface GenerationStep {
   name: string;
@@ -30,6 +29,11 @@ interface GenerationStep {
 export default function ContentDetailPage() {
   const params = useParams();
   const sessionId = params.id as string;
+
+  // TODO: Remove later
+
+  const [title, setTitle] = useState("");
+  const [lastSaved, setLastSaved] = useState<Date>(new Date());
 
   const [status, setStatus] = useState<WorkflowStatus>("idle");
   const [content, setContent] = useState("");
@@ -54,7 +58,8 @@ export default function ContentDetailPage() {
     {
       name: "Generate Content",
       status: "pending",
-      description: "Creating high-quality content with advanced vocabulary and grammar",
+      description:
+        "Creating high-quality content with advanced vocabulary and grammar",
       icon: Sparkles,
     },
     {
@@ -75,6 +80,7 @@ export default function ContentDetailPage() {
 
         const data = await response.json();
         setPromptInput(data.prompt || "");
+        setTitle(data.title);
         setContent(data.content || "");
       } catch (err) {
         console.error("Error loading session:", err);
@@ -268,8 +274,6 @@ export default function ContentDetailPage() {
     [sessionId]
   );
 
-
-
   const handleGenerateClick = useCallback(() => {
     if (promptInput.trim() && !isGenerating) {
       startGeneration(promptInput);
@@ -297,10 +301,15 @@ export default function ContentDetailPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Main Content Area */}
+      <EditorHeader
+        title={title!}
+        onTitleChange={setTitle}
+        lastSaved={lastSaved}
+      />
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Generation Progress */}
         <div className="w-80 shrink-0">
-          <GenerationSidebar status={status} steps={steps} />
+          <ContentSidebar />
         </div>
 
         {/* Center - Content Editor */}
@@ -328,7 +337,9 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-
+        <div className="w-80 shrink-0">
+          <GenerationSidebar status={status} steps={steps} />
+        </div>
       </div>
     </div>
   );

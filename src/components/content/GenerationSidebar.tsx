@@ -53,7 +53,7 @@ export function GenerationSidebar({ status, steps }: GenerationSidebarProps) {
   const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
   return (
-    <div className="h-full flex flex-col border-r bg-linear-to-b from-muted/30 to-muted/10">
+    <div className="h-full flex flex-col border-l bg-linear-to-b from-muted/30 to-muted/10">
       {/* Header with Status */}
       <div className="border-b bg-card px-4 py-4">
         <div className="flex items-center gap-3 mb-3">
