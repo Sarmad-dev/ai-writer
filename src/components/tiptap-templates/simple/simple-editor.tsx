@@ -230,10 +230,10 @@ const MobileToolbarContent = ({
   </>
 );
 
-export function SimpleEditor({ 
+export function SimpleEditor({
   content,
   onEditorReady,
-}: { 
+}: {
   content: string;
   onEditorReady?: (editor: any) => void;
 }) {
@@ -330,92 +330,90 @@ export function SimpleEditor({
 
   // Slash command functionality
   const slashCommand = useSlashCommand({ editor });
-  
+
   // AI selection menu functionality (shows when text is selected)
-  const aiSelectionMenu = useAISelectionMenu({ 
+  const aiSelectionMenu = useAISelectionMenu({
     editor,
     autoShowOnSelection: true,
-    minSelectionLength: 5 // Only show for selections of 5+ characters
+    minSelectionLength: 5, // Only show for selections of 5+ characters
   });
 
   return (
-    <div className="simple-editor-wrapper">
-      <EditorContext.Provider value={{ editor }}>
-        <Toolbar
-          ref={toolbarRef}
-          style={{
-            ...(isMobile
-              ? {
-                  bottom: `calc(100% - ${height - rect.y}px)`,
-                }
-              : {}),
-          }}
-          variant="fixed"
-        >
-          {mobileView === "main" ? (
-            <MainToolbarContent
-              onHighlighterClick={() => setMobileView("highlighter")}
-              onLinkClick={() => setMobileView("link")}
-              isMobile={isMobile}
-              editor={editor}
-            />
-          ) : (
-            <MobileToolbarContent
-              type={mobileView === "highlighter" ? "highlighter" : "link"}
-              onBack={() => setMobileView("main")}
-            />
-          )}
-        </Toolbar>
-
-        <EditorContent
-          editor={editor}
-          role="presentation"
-          className="simple-editor-content"
-        />
-
-        <TableHandle />
-        <TableSelectionOverlay
-          showResizeHandles={true}
-          cellMenu={(props) => (
-            <TableCellHandleMenu
-              editor={props.editor}
-              onMouseDown={(e) => props.onResizeStart?.("br")(e)}
-            />
-          )}
-        />
-        <TableExtendRowColumnButtons />
-
-        <SlashCommandTriggerButton
-          editor={editor}
-          text="Insert Block"
-          trigger="/"
-          hideWhenUnavailable={true}
-          showShortcut={true}
-          onTriggered={(trigger) => console.log("Inserted:", trigger)}
-        />
-
-        {editor && (
-          <SlashCommandMenu
+    <EditorContext.Provider value={{ editor }}>
+      <Toolbar
+        ref={toolbarRef}
+        style={{
+          ...(isMobile
+            ? {
+                bottom: `calc(100% - ${height - rect.y}px)`,
+              }
+            : {}),
+        }}
+        variant="fixed"
+      >
+        {mobileView === "main" ? (
+          <MainToolbarContent
+            onHighlighterClick={() => setMobileView("highlighter")}
+            onLinkClick={() => setMobileView("link")}
+            isMobile={isMobile}
             editor={editor}
-            isOpen={slashCommand.isOpen}
-            onClose={slashCommand.closeMenu}
-            position={slashCommand.position}
-            query={slashCommand.query}
-            range={slashCommand.range}
+          />
+        ) : (
+          <MobileToolbarContent
+            type={mobileView === "highlighter" ? "highlighter" : "link"}
+            onBack={() => setMobileView("main")}
           />
         )}
+      </Toolbar>
 
-        {editor && (
-          <AISelectionMenu
-            editor={editor}
-            isVisible={aiSelectionMenu.isVisible}
-            position={aiSelectionMenu.position}
-            selectedText={aiSelectionMenu.selectedText}
-            range={aiSelectionMenu.range}
-            onClose={aiSelectionMenu.hideMenu}
+      <EditorContent
+        editor={editor}
+        role="presentation"
+        className="simple-editor-content"
+      />
+
+      <TableHandle />
+      <TableSelectionOverlay
+        showResizeHandles={true}
+        cellMenu={(props) => (
+          <TableCellHandleMenu
+            editor={props.editor}
+            onMouseDown={(e) => props.onResizeStart?.("br")(e)}
           />
         )}
-      </EditorContext.Provider>
-    </div>
+      />
+      <TableExtendRowColumnButtons />
+
+      <SlashCommandTriggerButton
+        editor={editor}
+        text="Insert Block"
+        trigger="/"
+        hideWhenUnavailable={true}
+        showShortcut={true}
+        onTriggered={(trigger) => console.log("Inserted:", trigger)}
+      />
+
+      {editor && (
+        <SlashCommandMenu
+          editor={editor}
+          isOpen={slashCommand.isOpen}
+          onClose={slashCommand.closeMenu}
+          position={slashCommand.position}
+          query={slashCommand.query}
+          range={slashCommand.range}
+        />
+      )}
+
+      {editor && (
+        <AISelectionMenu
+          editor={editor}
+          isVisible={aiSelectionMenu.isVisible}
+          position={aiSelectionMenu.position}
+          selectedText={aiSelectionMenu.selectedText}
+          range={aiSelectionMenu.range}
+          onClose={aiSelectionMenu.hideMenu}
+        />
+      )}
+    </EditorContext.Provider>
   );
 }

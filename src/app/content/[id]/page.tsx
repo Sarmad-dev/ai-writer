@@ -308,9 +308,7 @@ export default function ContentDetailPage() {
       />
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Generation Progress */}
-        <div className="w-80 shrink-0">
           <ContentSidebar />
-        </div>
 
         {/* Center - Content Editor */}
         <div className="flex-1 min-w-0 relative">
@@ -337,9 +335,7 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-        <div className="w-80 shrink-0">
           <GenerationSidebar status={status} steps={steps} />
-        </div>
       </div>
     </div>
   );

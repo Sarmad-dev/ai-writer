@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Parse query parameters
-    const { searchParams } = new URL(req.url);
+    const searchParams = req.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
 

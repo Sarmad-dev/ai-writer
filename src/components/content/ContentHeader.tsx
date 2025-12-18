@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Logo } from "@/components/logo"
-import { ChevronDown, Grid3X3, LayoutList, Plus, Search } from "lucide-react"
+import { ChevronDown, Grid3X3, LayoutList, Search } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "../ui/theme-toggle"
+import { NewSessionDialog } from "./NewSessionDialog"
 
 interface ContentHeaderProps {
   searchQuery: string
@@ -33,10 +34,7 @@ export function ContentHeader({
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button size="sm" className="gap-2">
-            <Plus className="size-4" />
-            New Content
-          </Button>
+          <NewSessionDialog />
         </div>
       </div>
       <div className="flex items-center justify-between px-6 py-4">

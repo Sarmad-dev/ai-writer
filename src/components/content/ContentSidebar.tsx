@@ -74,7 +74,7 @@ export function ContentSidebar({ activeId }: ContentSidebarProps) {
   }
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-linear-to-b from-muted/30 to-muted/10">
+    <aside className="flex h-full w-72 flex-col border-r border-border bg-linear-to-b from-muted/30 to-muted/10">
       <div className="flex items-center justify-between border-b border-border p-3">
         <h2 className="text-sm font-semibold">My Content</h2>
         <Button variant="ghost" size="icon" className="size-7">
