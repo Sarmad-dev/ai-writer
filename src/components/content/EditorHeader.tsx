@@ -1,15 +1,20 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ArrowLeft,
   Check,
@@ -24,35 +29,81 @@ import {
   Share2,
   Trash2,
   Undo2,
-} from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
-import { DocumentControls } from "./DocumentControls"
+} from "lucide-react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { EnhancedDocumentControls } from "./EnhancedDocumentControls";
+import { useEditor } from "@/hooks/useEditor";
 
 interface EditorHeaderProps {
-  title: string
-  onTitleChange?: (title: string) => void
-  lastSaved?: Date
-  onSave?: () => void
-  onUndo?: () => void
-  onRedo?: () => void
+  // Optional props for backward compatibility
+  title?: string;
+  onTitleChange?: (title: string) => void;
+  lastSaved?: Date;
+  onSave?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
-export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, onRedo }: EditorHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(title)
-  const [isSaving, setIsSaving] = useState(false)
+export function EditorHeader(props: EditorHeaderProps) {
+  // Use single hook to avoid duplicate subscriptions
+  const { 
+    title: storeTitle, 
+    lastSaved: storeLastSaved, 
+    isDirty, 
+    isSaving, 
+    setTitle, 
+    save, 
+    canRedo, 
+    canUndo, 
+    undo, 
+    redo 
+  } = useEditor();
 
-  const handleSave = () => {
-    setIsSaving(true)
-    onSave?.()
-    setTimeout(() => setIsSaving(false), 1000)
-  }
+  // Use props if provided, otherwise use store values
+  const title = props.title ?? storeTitle;
+  const lastSaved = props.lastSaved ?? storeLastSaved;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+
+  // Update editedTitle when title changes
+  useEffect(() => {
+    setEditedTitle(title);
+  }, [title]);
+
+  const handleSave = async () => {
+    if (props.onSave) {
+      props.onSave();
+    } else {
+      await save();
+    }
+  };
+
+  const handleUndo = () => {
+    if (props.onUndo) {
+      props.onUndo();
+    } else {
+      undo();
+    }
+  };
+
+  const handleRedo = () => {
+    if (props.onRedo) {
+      props.onRedo();
+    } else {
+      redo();
+    }
+  };
 
   const handleTitleSubmit = () => {
-    onTitleChange?.(editedTitle)
-    setIsEditing(false)
-  }
+    if (props.onTitleChange) {
+      props.onTitleChange(editedTitle);
+    } else {
+      setTitle(editedTitle);
+    }
+    setIsEditing(false);
+  };
 
   return (
     <TooltipProvider>
@@ -78,8 +129,8 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
               {isEditing ? (
                 <form
                   onSubmit={(e) => {
-                    e.preventDefault()
-                    handleTitleSubmit()
+                    e.preventDefault();
+                    handleTitleSubmit();
                   }}
                   className="flex items-center gap-2"
                 >
@@ -113,7 +164,13 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8" onClick={onUndo}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={handleUndo}
+                  disabled={!canUndo && !props.onUndo}
+                >
                   <Undo2 className="size-4" />
                   <span className="sr-only">Undo</span>
                 </Button>
@@ -123,7 +180,13 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8" onClick={onRedo}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={handleRedo}
+                  disabled={!canRedo && !props.onRedo}
+                >
                   <Redo2 className="size-4" />
                   <span className="sr-only">Redo</span>
                 </Button>
@@ -133,7 +196,13 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
 
             <div className="mx-2 h-6 w-px bg-border" />
 
-            <Button variant="outline" size="sm" className="h-8 gap-2 bg-transparent" onClick={handleSave}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-2 bg-transparent"
+              onClick={handleSave}
+              disabled={!isDirty && !props.onSave}
+            >
               {isSaving ? (
                 <>
                   <Check className="size-4 text-green-500" />
@@ -142,14 +211,18 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
               ) : (
                 <>
                   <Save className="size-4" />
-                  Save
+                  {isDirty ? "Save" : "Saved"}
                 </>
               )}
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 bg-transparent"
+                >
                   <Share2 className="size-4" />
                   <span className="hidden sm:inline">Share</span>
                   <ChevronDown className="size-3" />
@@ -202,9 +275,9 @@ export function EditorHeader({ title, onTitleChange, lastSaved, onSave, onUndo, 
         </div>
 
         <div className="flex h-11 items-center gap-2 overflow-x-auto border-t border-border px-4">
-          <DocumentControls />
+          <EnhancedDocumentControls />
         </div>
       </header>
     </TooltipProvider>
-  )
+  );
 }

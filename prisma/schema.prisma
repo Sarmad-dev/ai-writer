@@ -13,20 +13,22 @@ datasource db {
 // User model
 
 model User {
-  id               String             @id @default(cuid())
-  email            String             @unique
-  emailVerified    Boolean            @default(false)
-  name             String?
-  password         String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  sessions         Session[]
-  contentSessions  ContentSession[]
-  chatConversations ChatConversation[]
-  images           Image[]
-  image            String?
-  accounts         Account[]
-  messageFeedback  MessageFeedback[]
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  emailVerified         Boolean                @default(false)
+  name                  String?
+  password              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  sessions              Session[]
+  contentSessions       ContentSession[]
+  chatConversations     ChatConversation[]
+  images                Image[]
+  image                 String?
+  accounts              Account[]
+  messageFeedback       MessageFeedback[]
+  documentComments      DocumentComment[]
+  documentCollaborators DocumentCollaborator[]
 
   @@map("user")
 }
@@ -64,15 +66,47 @@ model ContentSession {
   grammarIssues         Json?
   status                SessionStatus     @default(PENDING)
   metadata              Json?
+  
+  // Document Settings
+  documentSettings      Json?             // Store DocumentSettings as JSON
+  
+  // Document Statistics
+  wordCount             Int               @default(0)
+  characterCount        Int               @default(0)
+  paragraphCount        Int               @default(0)
+  readingTime           Int               @default(0) // in minutes
+  
+  // Version Control
+  version               Int               @default(1)
+  isTemplate            Boolean           @default(false)
+  templateCategory      String?
+  
+  // Collaboration
+  isShared              Boolean           @default(false)
+  shareToken            String?           @unique
+  allowComments         Boolean           @default(false)
+  allowEditing          Boolean           @default(false)
+  
+  // Publishing
+  isPublished           Boolean           @default(false)
+  publishedAt           DateTime?
+  slug                  String?           @unique
+  
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   graphs                Graph[]
   approvalRequests      ApprovalRequest[]
+  documentVersions      DocumentVersion[]
+  documentComments      DocumentComment[]
+  documentCollaborators DocumentCollaborator[]
 
   @@index([userId])
   @@index([createdAt])
   @@index([contentType])
+  @@index([isPublished])
+  @@index([slug])
+  @@index([shareToken])
 }
 
 // Chat conversation (for simple ChatGPT-like chats)
@@ -206,6 +240,72 @@ model Image {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Document Version History
+model DocumentVersion {
+  id               String         @id @default(cuid())
+  contentSessionId String
+  version          Int
+  title            String
+  content          String         @db.Text
+  documentSettings Json?
+  changesSummary   String?        @db.Text
+  createdAt        DateTime       @default(now())
+  createdBy        String
+  contentSession   ContentSession @relation(fields: [contentSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([contentSessionId, version])
+  @@index([contentSessionId])
+  @@index([createdAt])
+}
+
+// Document Comments
+model DocumentComment {
+  id               String         @id @default(cuid())
+  contentSessionId String
+  userId           String
+  content          String         @db.Text
+  selectionStart   Int?           // For inline comments
+  selectionEnd     Int?           // For inline comments
+  isResolved       Boolean        @default(false)
+  parentId         String?        // For threaded comments
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  contentSession   ContentSession @relation(fields: [contentSessionId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent           DocumentComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies          DocumentComment[] @relation("CommentReplies")
+
+  @@index([contentSessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([parentId])
+}
+
+// Document Collaborators
+model DocumentCollaborator {
+  id               String         @id @default(cuid())
+  contentSessionId String
+  userId           String
+  role             CollaboratorRole @default(VIEWER)
+  invitedBy        String
+  invitedAt        DateTime       @default(now())
+  acceptedAt       DateTime?
+  lastAccessedAt   DateTime?
+  contentSession   ContentSession @relation(fields: [contentSessionId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contentSessionId, userId])
+  @@index([contentSessionId])
+  @@index([userId])
+}
+
+enum CollaboratorRole {
+  OWNER
+  EDITOR
+  COMMENTER
+  VIEWER
 }
 
 model Account {
