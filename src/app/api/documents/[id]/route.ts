@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import {auth} from "@/lib/auth/auth"
 import prisma from "@/lib/db/prisma"
-import { DocumentSettings } from "@/stores/editorStore"
 
 // GET /api/documents/[id] - Get document with settings
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const documentId = params.id
+    const documentId = id
 
     const document = await prisma.contentSession.findFirst({
       where: {
@@ -54,15 +54,16 @@ export async function GET(
 // PUT /api/documents/[id] - Update document content and settings
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const documentId = params.id
+    const documentId = id
     const body = await request.json()
     const { 
       title, 
@@ -132,15 +133,16 @@ export async function PUT(
 // DELETE /api/documents/[id] - Delete document
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const documentId = params.id
+    const documentId = id
 
     // Validate that the document exists and belongs to the user
     const existingDocument = await prisma.contentSession.findFirst({

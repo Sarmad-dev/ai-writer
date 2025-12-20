@@ -64,6 +64,7 @@ export interface EditorState {
   documentId: string | null
   title: string
   content: string
+  prompt: string
   lastSaved: Date | null
   isDirty: boolean
   isAutoSaving: boolean
@@ -105,6 +106,7 @@ export interface EditorActions {
   setDocumentId: (id: string | null) => void
   setTitle: (title: string) => void
   setContent: (content: string) => void
+  setPrompt: (prompt: string) => void
   updateContent: (content: string) => void
   loadDocument: (id: string) => Promise<void>
   
@@ -212,6 +214,7 @@ const initialState: EditorState = {
   documentId: null,
   title: 'Untitled Document',
   content: '',
+  prompt: '',
   lastSaved: null,
   isDirty: false,
   isAutoSaving: false,
@@ -274,11 +277,12 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         setTitle: (title) => set({ title, isDirty: true }),
         
         setContent: (content) => {
-          const state = get()
           set({ content, isDirty: true })
           get().updateStatistics(content)
           get().addToHistory(content)
         },
+
+        setPrompt: (prompt) => set({ prompt, isDirty: true }),
         
         updateContent: (content) => {
           set({ content, isDirty: true })
@@ -310,6 +314,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
               documentId: document.id,
               title: document.title,
               content: document.content || '',
+              prompt: document.prompt || '',
               settings: document.documentSettings || defaultSettings,
               wordCount: document.wordCount,
               characterCount: document.characterCount,

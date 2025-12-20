@@ -20,7 +20,7 @@ export function useAISelectionMenu({
   const [range, setRange] = useState({ from: 0, to: 0 });
 
   const showMenu = useCallback((pos?: { x: number; y: number }) => {
-    if (!editor) return;
+    if (!editor || !editor.view || !editor.view.dom) return;
 
     const { selection } = editor.state;
     
@@ -50,11 +50,17 @@ export function useAISelectionMenu({
     if (!menuPosition) {
       // Calculate position based on selection end
       const { view } = editor;
-      const coords = view.coordsAtPos(selection.to);
-      menuPosition = { 
-        x: coords.left, 
-        y: coords.top - 10 
-      };
+      try {
+        const coords = view.coordsAtPos(selection.to);
+        menuPosition = { 
+          x: coords.left, 
+          y: coords.top - 10 
+        };
+      } catch (error) {
+        // Editor view not ready yet
+        console.warn("Editor view not ready for AI selection menu");
+        return;
+      }
     }
 
     console.log('🎯 AI Selection Hook - Showing menu:', {
@@ -76,7 +82,7 @@ export function useAISelectionMenu({
   }, []);
 
   useEffect(() => {
-    if (!editor || !autoShowOnSelection) return;
+    if (!editor || !autoShowOnSelection || !editor.view || !editor.view.dom) return;
 
     let selectionTimeout: NodeJS.Timeout;
 
@@ -126,8 +132,8 @@ export function useAISelectionMenu({
         }
         
         // Check if we're clicking in the editor
-        const editorElement = editor.view.dom;
-        if (editorElement.contains(target)) {
+        const editorElement = editor.view?.dom;
+        if (editorElement && editorElement.contains(target)) {
           // If clicking in editor, let selection change handler deal with it
           return;
         } else {

@@ -4,6 +4,7 @@ export interface DocumentData {
   id: string
   title: string
   content: string
+  prompt: string
   documentSettings?: DocumentSettings | null
   wordCount: number
   characterCount: number

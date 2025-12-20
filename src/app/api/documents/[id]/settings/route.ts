@@ -6,15 +6,16 @@ import { DocumentSettings } from "@/stores/editorStore"
 // GET /api/documents/[id]/settings - Get document settings
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const documentId = params.id
+    const documentId = id
 
     const document = await prisma.contentSession.findFirst({
       where: {
@@ -45,15 +46,16 @@ export async function GET(
 // PUT /api/documents/[id]/settings - Update document settings
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const documentId = params.id
+    const documentId = id
     const body = await request.json()
     const { settings } = body as { settings: DocumentSettings }
 
@@ -75,7 +77,7 @@ export async function PUT(
         id: documentId,
       },
       data: {
-        documentSettings: settings,
+        documentSettings: { ...settings },
         updatedAt: new Date(),
       },
       select: {

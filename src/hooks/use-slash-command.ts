@@ -28,7 +28,7 @@ export function useSlashCommand({ editor, char = "/" }: UseSlashCommandOptions) 
   }, []);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !editor.view || !editor.view.dom) return;
 
     const handleUpdate = () => {
       if (!isOpen) return;
@@ -82,13 +82,19 @@ export function useSlashCommand({ editor, char = "/" }: UseSlashCommandOptions) 
           // Get cursor position for menu placement
           setTimeout(() => {
             const { view } = editor;
-            const coords = view.coordsAtPos($from.pos);
+            if (!view || !view.dom) return;
             
-            openMenu(
-              { x: coords.left, y: coords.bottom + 8 },
-              { from: $from.pos, to: $from.pos + 1 },
-              ""
-            );
+            try {
+              const coords = view.coordsAtPos($from.pos);
+              openMenu(
+                { x: coords.left, y: coords.bottom + 8 },
+                { from: $from.pos, to: $from.pos + 1 },
+                ""
+              );
+            } catch (error) {
+              // Editor view not ready yet
+              console.warn("Editor view not ready for slash command");
+            }
           }, 0);
         }
       }

@@ -307,7 +307,6 @@ export function SimpleEditor({
       ],
       content,
     },
-    [content]
   );
 
   const rect = useCursorVisibility({
@@ -321,17 +320,26 @@ export function SimpleEditor({
     }
   }, [isMobile, mobileView]);
 
-  // Notify parent when editor is ready
+  // Notify parent when editor is ready and set ready state
   useEffect(() => {
-    if (editor && onEditorReady) {
-      onEditorReady(editor);
+    
+    if (editor && editor.view && editor.view.dom) {
+      console.log("Editor is ready, setting timeout");
+      // Add a small delay to ensure the editor is fully mounted
+      const timeout = setTimeout(() => {
+        if (onEditorReady) {
+          onEditorReady(editor);
+        }
+      }, 100);
+      
+      return () => clearTimeout(timeout);
     }
-  }, [editor, onEditorReady]);
+  }, [editor, onEditorReady]); // Watch the entire editor object, not just editor.view
 
-  // Slash command functionality
+  // Slash command functionality (only when editor is ready)
   const slashCommand = useSlashCommand({ editor });
 
-  // AI selection menu functionality (shows when text is selected)
+  // AI selection menu functionality (shows when text is selected, only when editor is ready)
   const aiSelectionMenu = useAISelectionMenu({
     editor,
     autoShowOnSelection: true,

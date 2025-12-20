@@ -18,6 +18,8 @@ import {
 import type { WorkflowStatus } from "@/lib/agent/types";
 import { ContentSidebar } from "@/components/content/ContentSidebar";
 import { EditorHeader } from "@/components/content/EditorHeader";
+import { useEditor } from "@/hooks/useEditor";
+import EditorInput from "@/components/editor/EditorInput";
 
 interface GenerationStep {
   name: string;
@@ -30,17 +32,14 @@ export default function ContentDetailPage() {
   const params = useParams();
   const sessionId = params.id as string;
 
-  // TODO: Remove later
-
-  const [title, setTitle] = useState("");
-  const [lastSaved, setLastSaved] = useState<Date>(new Date());
+  const { content, setContent, title, setTitle, prompt, setPrompt, isLoading } = useEditor({
+    documentId: sessionId,
+    autoSaveDelay: 2000,
+    enableAutoSave: true,
+  });
 
   const [status, setStatus] = useState<WorkflowStatus>("idle");
-  const [content, setContent] = useState("");
-  const [promptInput, setPromptInput] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<ContentEditorRef>(null);
   const [steps, setSteps] = useState<GenerationStep[]>([
     {
@@ -71,28 +70,6 @@ export default function ContentDetailPage() {
   ]);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Load session data
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const response = await fetch(`/api/content/sessions/${sessionId}`);
-        if (!response.ok) throw new Error("Failed to load session");
-
-        const data = await response.json();
-        setPromptInput(data.prompt || "");
-        setTitle(data.title);
-        setContent(data.content || "");
-      } catch (err) {
-        console.error("Error loading session:", err);
-        setError("Failed to load session");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSession();
-  }, [sessionId]);
-
   // Cleanup event source on unmount
   useEffect(() => {
     return () => {
@@ -115,7 +92,6 @@ export default function ContentDetailPage() {
       }
 
       setIsGenerating(true);
-      setError(null);
       setStatus("analyzing");
 
       // Reset steps
@@ -132,7 +108,6 @@ export default function ContentDetailPage() {
         });
       } catch (err) {
         console.error("Error updating prompt:", err);
-        setError("Failed to update prompt");
         setIsGenerating(false);
         return;
       }
@@ -174,7 +149,6 @@ export default function ContentDetailPage() {
             eventSource.close();
             eventSourceRef.current = null;
           } else if (data.type === "error") {
-            setError(data.error);
             setStatus("error");
             updateStepsFromStatus("error");
             setIsGenerating(false);
@@ -254,41 +228,11 @@ export default function ContentDetailPage() {
     });
   }, []);
 
-  const handleSave = useCallback(
-    async (newContent: string) => {
-      try {
-        const response = await fetch(`/api/content/sessions/${sessionId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: newContent }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save content");
-        }
-      } catch (err) {
-        console.error("Error saving content:", err);
-        throw err;
-      }
-    },
-    [sessionId]
-  );
-
   const handleGenerateClick = useCallback(() => {
-    if (promptInput.trim() && !isGenerating) {
-      startGeneration(promptInput);
+    if (prompt.trim() && !isGenerating) {
+      startGeneration(prompt);
     }
-  }, [promptInput, isGenerating, startGeneration]);
-
-  const handlePromptKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.shiftKey && !isGenerating) {
-        e.preventDefault();
-        handleGenerateClick();
-      }
-    },
-    [handleGenerateClick, isGenerating]
-  );
+  }, [prompt, isGenerating, startGeneration]);
 
   if (isLoading) {
     return (
@@ -304,7 +248,6 @@ export default function ContentDetailPage() {
       <EditorHeader
         title={title!}
         onTitleChange={setTitle}
-        lastSaved={lastSaved}
       />
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Generation Progress */}
@@ -316,22 +259,15 @@ export default function ContentDetailPage() {
             ref={editorRef}
             sessionId={sessionId}
             initialContent={content}
-            onSave={handleSave}
             autoSave={true}
             autoSaveDelay={2000}
           />
           <div className="relative w-full h-[50px] -top-14 flex items-center justify-center">
-            <div className="flex items-center justify-center gap-4 w-[500px] border-2 border-secondary rounded-md px-2 h-full group focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all bg-background">
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <Input
-                value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
-                onKeyDown={handlePromptKeyDown}
-                placeholder="Enter your prompt to generate or regenerate content..."
-                className="h-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent!"
-                disabled={isGenerating}
-              />
-            </div>
+            <EditorInput
+              prompt={prompt}
+              setPrompt={setPrompt}
+              handleGenerateClick={handleGenerateClick}
+            />
           </div>
         </div>
 
