@@ -1,9 +1,5 @@
 // Export workflow functions
 export {
-  createAgentWorkflow,
-  createInitialState,
-  executeWorkflow,
-  streamWorkflow,
   defaultWorkflowConfig,
   streamEnhancedWorkflow,
   createEnhancedInitialState,

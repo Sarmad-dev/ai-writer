@@ -21,15 +21,37 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useRouter } from 'next/navigation';
+import { useCreateSession } from '@/hooks/use-content-sessions';
+import { SidebarTrigger } from '../ui/sidebar';
 
 interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
-  onNewContent?: () => void;
 }
 
-export function DashboardHeader({ title, subtitle, onNewContent }: DashboardHeaderProps) {
+export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const [isCreating, setIsCreating] = useState(false);
+  const createSession = useCreateSession();
+
+  const handleNewContent = async () => {
+    if (isCreating) return;
+    
+    setIsCreating(true);
+    try {
+      const newSession = await createSession.mutateAsync({
+        title: 'Untitled Content',
+        prompt: '',
+      });
+      router.push(`/content/${newSession.id}`);
+    } catch (error) {
+      console.error('Failed to create content session:', error);
+      setIsCreating(false);
+    }
+  };
+
 
   return (
     <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-b border-border sticky top-0 z-40">
@@ -102,16 +124,12 @@ export function DashboardHeader({ title, subtitle, onNewContent }: DashboardHead
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
 
-            {/* New Content Button */}
-            {onNewContent && (
               <Button 
-                onClick={onNewContent}
-                className="bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all"
+                onClick={handleNewContent}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Content
               </Button>
-            )}
           </div>
         </div>
       </div>

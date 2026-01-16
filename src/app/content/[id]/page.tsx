@@ -2,72 +2,34 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Input } from "@/components/ui/input";
 import {
   Loader2,
-  Sparkles,
-  Brain,
-  Search,
-  Save as SaveIcon,
 } from "lucide-react";
 import { GenerationSidebar } from "@/components/content/GenerationSidebar";
 import {
   ContentEditor,
-  type ContentEditorRef,
 } from "@/components/editor/ContentEditor";
 import type { WorkflowStatus } from "@/lib/agent/types";
 import { ContentSidebar } from "@/components/content/ContentSidebar";
 import { EditorHeader } from "@/components/content/EditorHeader";
 import { useEditor } from "@/hooks/useEditor";
 import EditorInput from "@/components/editor/EditorInput";
-
-interface GenerationStep {
-  name: string;
-  status: "pending" | "active" | "completed" | "error";
-  description: string;
-  icon?: any;
-}
+import { GenerationStep, GenerationSteps } from "@/lib/constants";
 
 export default function ContentDetailPage() {
   const params = useParams();
-  const sessionId = params.id as string;
+  const documentId = params.id as string;
 
-  const { content, setContent, title, setTitle, prompt, setPrompt, isLoading } = useEditor({
-    documentId: sessionId,
-    autoSaveDelay: 2000,
-    enableAutoSave: true,
-  });
+  const { setContent, title, setTitle, prompt, setPrompt, isLoading } =
+    useEditor({
+      documentId,
+      autoSaveDelay: 2000,
+      enableAutoSave: true,
+    });
 
   const [status, setStatus] = useState<WorkflowStatus>("idle");
   const [isGenerating, setIsGenerating] = useState(false);
-  const editorRef = useRef<ContentEditorRef>(null);
-  const [steps, setSteps] = useState<GenerationStep[]>([
-    {
-      name: "Analyze & Detect",
-      status: "pending",
-      description: "Understanding your request and detecting content type",
-      icon: Brain,
-    },
-    {
-      name: "Research",
-      status: "pending",
-      description: "Searching the web for relevant information",
-      icon: Search,
-    },
-    {
-      name: "Generate Content",
-      status: "pending",
-      description:
-        "Creating high-quality content with advanced vocabulary and grammar",
-      icon: Sparkles,
-    },
-    {
-      name: "Save",
-      status: "pending",
-      description: "Saving your content",
-      icon: SaveIcon,
-    },
-  ]);
+  const [steps, setSteps] = useState<GenerationStep[]>(GenerationSteps);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   // Cleanup event source on unmount
@@ -101,7 +63,7 @@ export default function ContentDetailPage() {
 
       // Update session with new prompt
       try {
-        await fetch(`/api/content/sessions/${sessionId}`, {
+        await fetch(`/api/content/sessions/${documentId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt: promptText }),
@@ -114,7 +76,7 @@ export default function ContentDetailPage() {
 
       // Connect to SSE stream
       const eventSource = new EventSource(
-        `/api/agent/generate?sessionId=${sessionId}`
+        `/api/agent/generate?sessionId=${documentId}`
       );
       eventSourceRef.current = eventSource;
 
@@ -166,7 +128,7 @@ export default function ContentDetailPage() {
         eventSourceRef.current = null;
       };
     },
-    [sessionId]
+    [documentId]
   );
 
   const updateStepsFromNodeHistory = useCallback((nodeHistory: string[]) => {
@@ -245,20 +207,15 @@ export default function ContentDetailPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Main Content Area */}
-      <EditorHeader
-        title={title!}
-        onTitleChange={setTitle}
-      />
+      <EditorHeader title={title!} onTitleChange={setTitle} />
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Generation Progress */}
         <ContentSidebar />
 
         {/* Center - Content Editor */}
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 flex items-center flex-col relative">
           <ContentEditor
-            ref={editorRef}
-            sessionId={sessionId}
-            initialContent={content}
+            sessionId={documentId}
             autoSave={true}
             autoSaveDelay={2000}
           />

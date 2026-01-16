@@ -1,10 +1,25 @@
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Rocket, Phone } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Rocket, Phone } from "lucide-react";
+import { AnimatedGridPattern } from "../patterns/animated-grid-patters";
+import { cn } from "@/lib/utils";
 
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[40px_40px] opacity-50" />
+      {/* <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[40px_40px] opacity-50" /> */}
+
+      <div className="absolute inset-0 flex w-full items-center justify-center overflow-hidden rounded-lg bg-background p-20 md:shadow-xl">
+        <AnimatedGridPattern
+          numSquares={30}
+          maxOpacity={0.1}
+          duration={3}
+          repeatDelay={1}
+          className={cn(
+            "mask-[radial-gradient(500px_circle_at_center,white,transparent)]",
+            "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12"
+          )}
+        />
+      </div>
 
       <div className="relative px-4 pb-24 pt-32 md:pb-32 md:pt-40">
         <div className="mx-auto max-w-4xl text-center">
@@ -23,7 +38,8 @@ export function HeroSection() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-pretty text-center text-base text-muted-foreground md:text-lg">
-            Connecting you with intelligent AI to write, innovate and create compelling content
+            Connecting you with intelligent AI to write, innovate and create
+            compelling content
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -46,5 +62,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

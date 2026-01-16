@@ -98,7 +98,7 @@ export function ContentSidebar({ activeId }: ContentSidebarProps) {
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 pb-4">
           {filteredContent.map((item) => (
-            <button
+            <div
               key={item.id}
               className={cn(
                 "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent",
@@ -121,7 +121,7 @@ export function ContentSidebar({ activeId }: ContentSidebarProps) {
               >
                 <MoreHorizontal className="size-3" />
               </Button>
-            </button>
+            </div>
           ))}
         </div>
       </ScrollArea>

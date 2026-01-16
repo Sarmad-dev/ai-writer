@@ -25,7 +25,7 @@ export class AIClientService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = '/api/ai';
+    this.baseUrl = "/api/ai";
   }
 
   /**
@@ -36,11 +36,11 @@ export class AIClientService {
     context?: string,
     options: AIGenerateOptions = {}
   ): Promise<string> {
-    console.log('🌐 AI Client - generateContent called:', {
-      prompt: prompt.substring(0, 200) + (prompt.length > 200 ? '...' : ''),
+    console.log("🌐 AI Client - generateContent called:", {
+      prompt: prompt.substring(0, 200) + (prompt.length > 200 ? "..." : ""),
       promptLength: prompt.length,
       context: context,
-      options: options
+      options: options,
     });
 
     try {
@@ -50,39 +50,48 @@ export class AIClientService {
         options,
       } as AIGenerateRequest;
 
-      console.log('🌐 AI Client - Sending request to /api/ai/generate:', requestBody);
+      console.log(
+        "🌐 AI Client - Sending request to /api/ai/generate:",
+        requestBody
+      );
 
       const response = await fetch(`${this.baseUrl}/generate`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       });
 
-      console.log('🌐 AI Client - Response status:', response.status);
+      console.log("🌐 AI Client - Response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('🌐 AI Client - Error response:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        console.error("🌐 AI Client - Error response:", errorData);
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
       }
 
       const data: AIGenerateResponse = await response.json();
-      console.log('🌐 AI Client - Success response:', {
+      console.log("🌐 AI Client - Success response:", {
         success: data.success,
         contentLength: data.content?.length,
-        contentPreview: data.content?.substring(0, 100) + (data.content?.length > 100 ? '...' : '')
+        contentPreview:
+          data.content?.substring(0, 100) +
+          (data.content?.length > 100 ? "..." : ""),
       });
-      
+
       if (!data.success) {
-        throw new Error(data.error || 'AI generation failed');
+        throw new Error(data.error || "AI generation failed");
       }
 
       return data.content;
     } catch (error) {
-      console.error('AI client error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to generate AI content');
+      console.error("AI client error:", error);
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to generate AI content"
+      );
     }
   }
 
@@ -94,21 +103,21 @@ export class AIClientService {
     tone: string = "professional",
     style: string = "clear"
   ): Promise<string> {
-    console.log('🤖 AI Client - improveText called:', {
+    console.log("🤖 AI Client - improveText called:", {
       text: text,
       textLength: text.length,
       tone: tone,
-      style: style
+      style: style,
     });
-    
+
     const prompt = `Please improve the following text to be more ${tone} and ${style}. Keep the same meaning but enhance clarity, flow, and impact. Return only the improved text without any explanations or additional commentary.
 
 Text to improve:
 ${text}
 
 Improved text:`;
-    console.log('🤖 AI Client - Generated prompt:', prompt);
-    
+    console.log("🤖 AI Client - Generated prompt:", prompt);
+
     return this.generateContent(prompt);
   }
 
@@ -117,12 +126,12 @@ Improved text:`;
    */
   async summarizeText(
     text: string,
-    length: 'short' | 'medium' | 'long' = 'medium'
+    length: "short" | "medium" | "long" = "medium"
   ): Promise<string> {
     const lengthInstructions = {
       short: "in 1-2 sentences",
       medium: "in 3-4 sentences",
-      long: "in 1-2 paragraphs"
+      long: "in 1-2 paragraphs",
     };
 
     const prompt = `Please summarize the following text ${lengthInstructions[length]}. Return only the summary without any explanations.
@@ -172,7 +181,7 @@ Corrected text:`;
    */
   async changeTone(
     text: string,
-    tone: 'professional' | 'casual' | 'friendly' | 'formal' | 'creative'
+    tone: "professional" | "casual" | "friendly" | "formal" | "creative"
   ): Promise<string> {
     const prompt = `Rewrite the following text in a ${tone} tone while keeping the same meaning:\n\n${text}`;
     return this.generateContent(prompt);

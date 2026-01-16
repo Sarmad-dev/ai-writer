@@ -1,5 +1,3 @@
-"use client"
-
 import { AIWritingLogo } from "./logo"
 import { ProductDropdown } from "./product-dropdown"
 import { ResourcesDropdown } from "./resources-dropdown"

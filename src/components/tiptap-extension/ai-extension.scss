@@ -28,19 +28,10 @@
 
 /* AI Selection Menu */
 .ai-selection-menu {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   z-index: 1000;
   animation: ai-menu-appear 0.2s ease-out;
   backdrop-filter: blur(8px);
-
-  .dark & {
-    background: #1f2937;
-    border-color: #374151;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  }
 
   /* Input styling */
   input {

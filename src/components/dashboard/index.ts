@@ -1,7 +1,6 @@
 export { NewContentButton } from './NewContentButton';
 export { ContentSessionCard } from './ContentSessionCard';
 export { ContentSessionList } from './ContentSessionList';
-export { DashboardLayout } from './DashboardLayout';
 export { DashboardHeader } from './DashboardHeader';
 export { Sidebar } from './Sidebar';
 export { StatsCards } from './StatsCards';

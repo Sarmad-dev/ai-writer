@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,10 +12,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { Plus, MessageSquare, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Plus, MessageSquare, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Conversation {
   id: string;
@@ -29,9 +30,14 @@ interface ChatSidebarProps {
   onConversationSelect: (conversationId: string | null) => void;
 }
 
-export function ChatSidebar({ currentConversationId, onConversationSelect }: ChatSidebarProps) {
+export function ChatSidebar({
+  currentConversationId,
+  onConversationSelect,
+}: ChatSidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { state } = useSidebar();
 
   useEffect(() => {
     fetchConversations();
@@ -40,13 +46,13 @@ export function ChatSidebar({ currentConversationId, onConversationSelect }: Cha
   const fetchConversations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/chat/conversations');
+      const response = await fetch("/api/chat/conversations");
       if (response.ok) {
         const data = await response.json();
         setConversations(data || []);
       }
     } catch (error) {
-      console.error('Failed to fetch conversations:', error);
+      console.error("Failed to fetch conversations:", error);
     } finally {
       setLoading(false);
     }
@@ -58,9 +64,9 @@ export function ChatSidebar({ currentConversationId, onConversationSelect }: Cha
 
   // Refresh conversations when current conversation changes
   useEffect(() => {
-    if (currentConversationId && currentConversationId !== 'new') {
+    if (currentConversationId && currentConversationId !== "new") {
       // Check if this conversation is already in the list
-      const exists = conversations.some(c => c.id === currentConversationId);
+      const exists = conversations.some((c) => c.id === currentConversationId);
       if (!exists) {
         fetchConversations();
       }
@@ -68,19 +74,25 @@ export function ChatSidebar({ currentConversationId, onConversationSelect }: Cha
   }, [currentConversationId]);
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b p-4">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className={`border-b ${state === "expanded" ? "p-4" : "p-2"}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Chat</h2>
+          {state === "expanded" && (
+            <h2 className="text-lg font-semibold">Chat</h2>
+          )}
           <SidebarTrigger />
         </div>
-        <Button 
+        <Button
           onClick={handleNewChat}
-          className="w-full mt-3"
-          size="sm"
+          className={
+            state === "expanded"
+              ? "w-full mt-3"
+              : "flex items-center! justify-center!"
+          }
+          size={state === "expanded" ? "sm" : "icon-sm"}
         >
           <Plus className="h-4 w-4 mr-2" />
-          New Chat
+          {state === "expanded" && "New Chat"}
         </Button>
       </SidebarHeader>
 
@@ -104,8 +116,8 @@ export function ChatSidebar({ currentConversationId, onConversationSelect }: Cha
                       onClick={() => onConversationSelect(conversation.id)}
                       isActive={currentConversationId === conversation.id}
                       className={cn(
-                        'w-full justify-start',
-                        currentConversationId === conversation.id && 'bg-accent'
+                        "w-full justify-start",
+                        currentConversationId === conversation.id && "bg-accent"
                       )}
                     >
                       <MessageSquare className="h-4 w-4 mr-2 shrink-0" />

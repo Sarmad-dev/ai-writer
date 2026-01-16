@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import { SponsorsSection } from "./sponsor/SponsorsSection";
 import { FeaturesSection } from "./features/FeaturesSection";

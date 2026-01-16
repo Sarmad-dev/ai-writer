@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
     console.log('🚀 API Route - Calling OpenAI with messages:', messages);
 
     const response = await openai.createChatCompletion(messages, {
-      model: options.model || "gpt-4o",
+      model: options.model || "gpt-5.1",
       temperature: options.temperature || 0.7,
-      maxTokens: options.maxTokens || 2000,
+      maxTokens: options.maxTokens || 4000,
     });
 
     console.log('🚀 API Route - OpenAI response:', {

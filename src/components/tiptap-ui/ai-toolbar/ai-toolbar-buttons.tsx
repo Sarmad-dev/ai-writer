@@ -15,6 +15,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/tiptap-ui-primitive/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button as UiButton } from "@/components/ui/button";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -28,17 +39,18 @@ interface AIToolbarButtonsProps {
 
 export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [promptMode, setPromptMode] = useState<"generate" | "translate" | null>(null);
+  const [promptInput, setPromptInput] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("Spanish");
 
   if (!editor) return null;
 
   const hasSelection = !editor.state.selection.empty;
 
-  const handleAIAction = async (action: () => void) => {
+  const handleAIAction = async (action: () => void | Promise<void>) => {
     setIsLoading(true);
     try {
-      action();
-      // Note: The actual loading state should be managed by the AI extension
-      // This is just for immediate UI feedback
+      await action();
       setTimeout(() => setIsLoading(false), 1000);
     } catch (error) {
       console.error("AI action failed:", error);
@@ -46,174 +58,280 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
     }
   };
 
-  return (
-    <div className="flex items-center gap-1">
-      {/* Quick AI Generate */}
-      <Button
-        data-style="ghost"
-        onClick={() => handleAIAction(async () => {
-          const prompt = window.prompt("What would you like me to write?");
-          if (prompt) {
-            try {
-              const content = await aiClient.generateContent(prompt);
-              editor.chain().focus().insertContent(content).run();
-            } catch (error) {
-              console.error("AI generation failed:", error);
-              alert("Failed to generate content. Please try again.");
-            }
-          }
-        })}
-        disabled={isLoading}
-        tooltip="Generate with AI"
-      >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <Sparkles className="w-4 h-4" />
-        )}
-      </Button>
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setPromptMode(null);
+      setPromptInput("");
+      setTargetLanguage("Spanish");
+    }
+  };
 
-      {/* Improve Text (only show if text is selected) */}
-      {hasSelection && (
+  const handlePromptSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    if (!editor || !promptMode) return;
+
+    if (promptMode === "generate") {
+      const value = promptInput.trim();
+      if (!value) {
+        setPromptMode(null);
+        return;
+      }
+
+      await handleAIAction(async () => {
+        const content = await aiClient.generateContent(value);
+        editor.chain().focus().insertContent(content).run();
+      });
+    } else if (promptMode === "translate") {
+      const language = targetLanguage.trim();
+      if (!language) {
+        setPromptMode(null);
+        return;
+      }
+
+      const { from, to } = editor.state.selection;
+      const selectedText = editor.state.doc.textBetween(from, to, "\n\n");
+      if (!selectedText.trim()) {
+        setPromptMode(null);
+        return;
+      }
+
+      await handleAIAction(async () => {
+        const translated = await aiClient.translateText(selectedText, language);
+        editor.chain().focus().insertContent(translated).run();
+      });
+    }
+
+    setPromptMode(null);
+    setPromptInput("");
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-1">
         <Button
           data-style="ghost"
-          onClick={() => handleAIAction(() => {
-            editor.chain().focus().improveText({ tone: "professional" }).run();
-          })}
+          onClick={() => setPromptMode("generate")}
           disabled={isLoading}
-          tooltip="Improve selected text"
+          tooltip="Generate with AI"
         >
-          <Wand2 className="w-4 h-4" />
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4" />
+          )}
         </Button>
-      )}
 
-      {/* More AI Actions Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        {hasSelection && (
           <Button
             data-style="ghost"
+            onClick={() =>
+              handleAIAction(() => {
+                editor.chain().focus().improveText({ tone: "professional" }).run();
+              })
+            }
             disabled={isLoading}
-            tooltip="More AI actions"
+            tooltip="Improve selected text"
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <Wand2 className="w-4 h-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
-          {/* Text Generation */}
-          <DropdownMenuItem
-            onClick={() => handleAIAction(() => {
-              const prompt = window.prompt("What would you like me to write?");
-              if (prompt) {
-                editor.chain().focus().generateText(prompt).run();
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              data-style="ghost"
+              disabled={isLoading}
+              tooltip="More AI actions"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              onClick={() => setPromptMode("generate")}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Text
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() =>
+                handleAIAction(() => {
+                  editor.chain().focus().continueWriting({ tone: "consistent" }).run();
+                })
               }
-            })}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Generate Text
-          </DropdownMenuItem>
+            >
+              <PenTool className="w-4 h-4 mr-2" />
+              Continue Writing
+            </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => handleAIAction(() => {
-              editor.chain().focus().continueWriting({ tone: "consistent" }).run();
-            })}
-          >
-            <PenTool className="w-4 h-4 mr-2" />
-            Continue Writing
-          </DropdownMenuItem>
+            <DropdownMenuSeparator />
 
-          <DropdownMenuSeparator />
-
-          {/* Text Improvement (only if text selected) */}
-          {hasSelection && (
-            <>
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().improveText({ tone: "professional" }).run();
-                })}
-              >
-                <Wand2 className="w-4 h-4 mr-2" />
-                Improve Text
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().fixGrammar().run();
-                })}
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Fix Grammar
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().summarizeText({ length: "medium" }).run();
-                })}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Summarize
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  const language = window.prompt("Translate to which language?", "Spanish");
-                  if (language) {
-                    editor.chain().focus().translateText(language).run();
+            {hasSelection && (
+              <>
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().improveText({ tone: "professional" }).run();
+                    })
                   }
-                })}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Improve Text
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().fixGrammar().run();
+                    })
+                  }
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Fix Grammar
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().summarizeText({ length: "medium" }).run();
+                    })
+                  }
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Summarize
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    setPromptMode("translate")
+                    console.log("Translate selected text")
+                  }}
+                >
+                  <Languages className="w-4 h-4 mr-2" />
+                  Translate
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().changeTone("professional").run();
+                    })
+                  }
+                >
+                  Make Professional
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().changeTone("casual").run();
+                    })
+                  }
+                >
+                  Make Casual
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().changeTone("friendly").run();
+                    })
+                  }
+                >
+                  Make Friendly
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().expandText().run();
+                    })
+                  }
+                >
+                  Expand Text
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleAIAction(() => {
+                      editor.chain().focus().makeTextConcise().run();
+                    })
+                  }
+                >
+                  Make Concise
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <Dialog open={promptMode !== null} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:max-w-[480px]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePromptSubmit(e);
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {promptMode === "translate"
+                  ? "Translate selected text"
+                  : "Generate with AI"}
+              </DialogTitle>
+              <DialogDescription>
+                {promptMode === "translate"
+                  ? "Choose a target language to translate the selected text."
+                  : "Describe what you would like the AI to write."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {promptMode === "generate" && (
+                <Textarea
+                  value={promptInput}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  placeholder="Write a blog introduction about AI writing assistants..."
+                  rows={4}
+                />
+              )}
+              {promptMode === "translate" && (
+                <Input
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  placeholder="Spanish"
+                />
+              )}
+            </div>
+            <DialogFooter>
+              <UiButton
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogOpenChange(false)}
               >
-                <Languages className="w-4 h-4 mr-2" />
-                Translate
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              {/* Tone Changes */}
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().changeTone("professional").run();
-                })}
+                Cancel
+              </UiButton>
+              <UiButton
+                type="submit"
+                disabled={
+                  promptMode === "generate"
+                    ? !promptInput.trim()
+                    : !targetLanguage.trim()
+                }
               >
-                Make Professional
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().changeTone("casual").run();
-                })}
-              >
-                Make Casual
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().changeTone("friendly").run();
-                })}
-              >
-                Make Friendly
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              {/* Text Length */}
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().expandText().run();
-                })}
-              >
-                Expand Text
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleAIAction(() => {
-                  editor.chain().focus().makeTextConcise().run();
-                })}
-              >
-                Make Concise
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+                {promptMode === "translate" ? "Translate" : "Generate"}
+              </UiButton>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

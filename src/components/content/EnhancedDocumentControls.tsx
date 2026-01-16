@@ -599,43 +599,6 @@ export function EnhancedDocumentControls() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Page Color Control */}
-        <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2 text-xs"
-                >
-                  <Palette className="size-4" />
-                  <ChevronDown className="size-3" />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>Page color</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Page Color</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {PAGE_COLORS.map((color) => (
-              <DropdownMenuItem
-                key={color.value}
-                onClick={() => updateSettings({ pageColor: color.value })}
-              >
-                <div
-                  className={`mr-2 size-4 rounded border border-border ${color.color}`}
-                />
-                {color.label}
-                {settings.pageColor === color.value && (
-                  <span className="ml-auto text-primary">✓</span>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <Separator orientation="vertical" className="mx-1 h-6" />
 
         {/* Advanced Settings */}

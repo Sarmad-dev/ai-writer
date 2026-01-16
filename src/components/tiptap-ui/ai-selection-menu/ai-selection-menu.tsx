@@ -19,6 +19,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/tiptap-ui-primitive/button";
 import { aiClient } from "@/lib/ai/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button as UiButton } from "@/components/ui/button";
 
 export interface AIAction {
   id: string;
@@ -183,6 +193,7 @@ export function AISelectionMenu({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wasVisible = useRef(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Debug: Log props when component renders
   console.log('🎨 AI Selection Menu - Component rendered:', {
@@ -241,6 +252,7 @@ export function AISelectionMenu({
       console.log('🎯 Setting selectedAction to:', action.id);
       setSelectedAction(action);
       setInputValue("");
+      setIsDialogOpen(true);
     } else {
       executeAction(action);
     }
@@ -272,7 +284,10 @@ export function AISelectionMenu({
     }
   };
 
-  const handleInputSubmit = () => {
+  const handleInputSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     console.log('📝 AI Selection Menu - handleInputSubmit called:', {
       selectedAction: selectedAction?.id,
       inputValue: inputValue,
@@ -283,103 +298,64 @@ export function AISelectionMenu({
     
     if (selectedAction) {
       executeAction(selectedAction, inputValue);
+      setIsDialogOpen(false);
     }
   };
 
-  const handleInputKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleInputSubmit();
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setIsDialogOpen(false);
+      setSelectedAction(null);
+      setInputValue("");
+    } else if (selectedAction?.requiresInput) {
+      setIsDialogOpen(true);
     }
   };
 
   if (!isVisible) return null;
 
   return createPortal(
-    <div
-      className="ai-selection-menu bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 min-w-[320px] max-w-[400px] z-50"
-      style={{
-        position: "fixed",
-        left: Math.min(position.x, window.innerWidth - 420),
-        top: position.y,
-        transform: "translateY(-100%)",
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {selectedAction ? selectedAction.title : "AI Assistant"}
-          </span>
-        </div>
-        <Button
-          data-style="ghost"
-          onClick={() => selectedAction ? setSelectedAction(null) : onClose()}
-          className="p-1 h-6 w-6"
-        >
-          <X className="w-3 h-3" />
-        </Button>
-      </div>
-
-      {/* Selected text preview */}
-      <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300 max-h-20 overflow-hidden">
-        <div className="font-medium mb-1">Selected text:</div>
-        "{selectedText.length > 150 ? selectedText.substring(0, 150) + "..." : selectedText}"
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
-
-      {/* Input form for actions that require input */}
-      {selectedAction?.requiresInput ? (
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {selectedAction.inputLabel}
-            </label>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-              placeholder={selectedAction.inputPlaceholder}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-              disabled={isLoading}
-            />
+    <>
+      <div
+        className="ai-selection-menu bg-background border border-border rounded-lg shadow-xl p-3 min-w-[320px] max-w-[400px] z-50"
+        style={{
+          position: "fixed",
+          left: Math.min(position.x, window.innerWidth - 420),
+          top: position.y,
+          transform: "translateY(-100%)",
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {selectedAction ? selectedAction.title : "AI Assistant"}
+            </span>
           </div>
-          <div className="flex gap-2">
-            <Button
-              data-style="ghost"
-              onClick={() => setSelectedAction(null)}
-              disabled={isLoading}
-              className="flex-1 px-3 py-2"
-            >
-              Back
-            </Button>
-            <Button
-              onClick={handleInputSubmit}
-              disabled={isLoading || (!inputValue && selectedAction.id !== "expand" && selectedAction.id !== "continue-writing")}
-              className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  Execute
-                  <ArrowRight className="w-3 h-3 ml-1" />
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            data-style="ghost"
+            onClick={() => (selectedAction ? setSelectedAction(null) : onClose())}
+            className="p-1 h-6 w-6"
+          >
+            <X className="w-3 h-3" />
+          </Button>
         </div>
-      ) : (
-        /* Action buttons */
+
+        {/* Selected text preview */}
+        <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300 max-h-20 overflow-hidden">
+          <div className="font-medium mb-1">Selected text:</div>
+          "{selectedText.length > 150 ? selectedText.substring(0, 150) + "..." : selectedText}"
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* Action buttons */}
         <div className="space-y-1 max-h-64 overflow-y-auto">
           {aiActions.map((action) => (
             <Button
@@ -410,15 +386,74 @@ export function AISelectionMenu({
             </Button>
           ))}
         </div>
-      )}
 
-      {/* Footer tip */}
-      <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          Press <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-600 rounded text-xs">Esc</kbd> to {selectedAction ? "go back" : "close"}
-        </p>
+        {/* Footer tip */}
+        <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            Press{" "}
+            <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-600 rounded text-xs">
+              Esc
+            </kbd>{" "}
+            to {selectedAction ? "go back" : "close"}
+          </p>
+        </div>
       </div>
-    </div>,
+
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:max-w-[480px]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleInputSubmit(e);
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>{selectedAction?.title}</DialogTitle>
+              {selectedAction?.inputLabel && (
+                <DialogDescription>{selectedAction.inputLabel}</DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={selectedAction?.inputPlaceholder}
+                autoFocus
+                disabled={isLoading}
+              />
+            </div>
+            <DialogFooter>
+              <UiButton
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogOpenChange(false)}
+              >
+                Cancel
+              </UiButton>
+              <UiButton
+                type="submit"
+                disabled={
+                  isLoading ||
+                  (!!selectedAction &&
+                    !inputValue &&
+                    selectedAction.id !== "expand" &&
+                    selectedAction.id !== "continue-writing")
+                }
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    Execute
+                    <ArrowRight className="w-3 h-3 ml-1" />
+                  </>
+                )}
+              </UiButton>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>,
     document.body
   );
 }

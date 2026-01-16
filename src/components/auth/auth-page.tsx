@@ -3,18 +3,7 @@
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
-import {
-  AtSignIcon,
   ChevronLeftIcon,
-  Eye,
-  EyeOff,
-  Loader2,
-  LockKeyhole,
 } from "lucide-react";
 import type React from "react";
 import { FloatingPaths } from "@/components/floating-paths";
@@ -43,6 +32,7 @@ export function AuthPage({ flow }: AuthPageParams) {
     try {
       const data = await authClient.signIn.social({
         provider,
+        callbackURL: '/dashboard'
       });
 
       if (data) {
@@ -90,10 +80,10 @@ export function AuthPage({ flow }: AuthPageParams) {
           <div className="-translate-y-87.5 absolute top-0 right-0 h-320 w-60 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)]" />
         </div>
         <Button asChild className="absolute top-7 left-5" variant="ghost">
-          <a href="/">
+          <Link href="/">
             <ChevronLeftIcon />
             Home
-          </a>
+          </Link>
         </Button>
         <div className="mx-auto space-y-4 sm:w-sm">
           <Logo className="h-5 lg:hidden" />

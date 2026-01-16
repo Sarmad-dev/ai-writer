@@ -25,8 +25,6 @@ export async function GET(
 
     const conversationId = (await params).id;
 
-    console.log("Conversation ID: ", conversationId)
-
     // Verify the conversation belongs to the user
     const conversation = await prisma.chatConversation.findFirst({
       where: {

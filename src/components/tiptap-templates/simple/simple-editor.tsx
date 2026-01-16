@@ -79,6 +79,7 @@ import { TableHandle } from "@/components/tiptap-node/table-node/ui/table-handle
 import { TableSelectionOverlay } from "@/components/tiptap-node/table-node/ui/table-selection-overlay";
 import { TableCellHandleMenu } from "@/components/tiptap-node/table-node/ui/table-cell-handle-menu";
 import { TableExtendRowColumnButtons } from "@/components/tiptap-node/table-node/ui/table-extend-row-column-button";
+import { useEditor as useEditorStore } from "@/hooks/useEditor";
 
 // Import required styles
 import "@/components/tiptap-node/table-node/styles/prosemirror-table.scss";
@@ -118,7 +119,7 @@ const MainToolbarContent = ({
   editor: any;
 }) => {
   return (
-    <div className="flex items-center justify-center overflow-x-auto bg-background fixed -mt-3">
+    <div className="flex items-center justify-center overflow-x-auto bg-background">
       <Spacer />
 
       <ToolbarGroup>
@@ -258,10 +259,8 @@ export function SimpleEditor({
       },
       extensions: [
         StarterKit.configure({
-          horizontalRule: false,
-          codeBlock: false, // Disable default code block
           link: {
-            openOnClick: false,
+            openOnClick: true,
             enableClickSelection: true,
           },
         }),
@@ -276,7 +275,7 @@ export function SimpleEditor({
         NodeBackground, // For cell background colors
         TextStyle, // For text styling
         HorizontalRule,
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
+        TextAlign.configure({ types: ["heading", "paragraph", "codeBlock"] }),
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
@@ -300,11 +299,12 @@ export function SimpleEditor({
         MathNode, // Add inline math support
         BlockMathNode, // Add block math support
         AIExtension.configure({
-          model: "gpt-4o",
+          model: "gpt-5.1",
           temperature: 0.7,
           maxTokens: 2000,
         }), // Add AI capabilities
       ],
+      autofocus: true,
       content,
     },
   );
@@ -346,6 +346,8 @@ export function SimpleEditor({
     minSelectionLength: 5, // Only show for selections of 5+ characters
   });
 
+  const { settings } = useEditorStore()
+
   return (
     <EditorContext.Provider value={{ editor }}>
       <Toolbar
@@ -355,9 +357,11 @@ export function SimpleEditor({
             ? {
                 bottom: `calc(100% - ${height - rect.y}px)`,
               }
-            : {}),
+            : {
+                marginTop: "-1.5rem", // Compensate for ContentEditor's p-6 padding (1.5rem = 24px)
+                zIndex: 10,
+              }),
         }}
-        variant="fixed"
       >
         {mobileView === "main" ? (
           <MainToolbarContent
@@ -378,6 +382,9 @@ export function SimpleEditor({
         editor={editor}
         role="presentation"
         className="simple-editor-content"
+        style={{
+          padding: `${settings.marginTop}in ${settings.marginRight}in ${settings.marginBottom}in ${settings.marginLeft}in`,
+        }}
       />
 
       <TableHandle />
