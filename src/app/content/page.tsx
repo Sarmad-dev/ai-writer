@@ -59,17 +59,17 @@ export default function ContentPage() {
     .filter(
       (item) =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.content.toLowerCase().includes(searchQuery.toLowerCase())
+        (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .sort((a, b) => {
       if (sortBy === "Recent") {
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       }
       if (sortBy === "Alphabetical") {
         return a.title.localeCompare(b.title);
       }
       if (sortBy === "Word Count") {
-        return b.wordCount - a.wordCount;
+        return (b.wordCount || 0) - (a.wordCount || 0);
       }
       return 0;
     });
@@ -111,9 +111,9 @@ export default function ContentPage() {
                 key={item.id}
                 id={item.id}
                 title={item.title}
-                content={item.content}
-                updatedAt={item.updatedAt}
-                wordCount={item.wordCount}
+                content={item.content || ""}
+                updatedAt={new Date(item.updatedAt)}
+                wordCount={item.wordCount || 0}
                 onRename={handleRename}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}
@@ -127,9 +127,9 @@ export default function ContentPage() {
                 key={item.id}
                 id={item.id}
                 title={item.title}
-                content={item.content}
-                updatedAt={item.updatedAt}
-                wordCount={item.wordCount}
+                content={item.content || ""}
+                updatedAt={new Date(item.updatedAt)}
+                wordCount={item.wordCount || 0}
                 onRename={handleRename}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}

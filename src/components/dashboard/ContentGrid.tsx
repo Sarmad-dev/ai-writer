@@ -14,7 +14,7 @@ import {
   Bookmark,
   TrendingUp
 } from 'lucide-react';
-import { useContentSessions } from '@/lib/query/hooks/useContentSessions';
+import { useContentSessions } from '@/hooks/use-content-sessions';
 import { ContentSession } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -190,7 +190,7 @@ export function ContentGrid() {
     );
   }
 
-  if (!data || data.data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <Card className="border-0 shadow-lg">
         <CardContent className="p-12 text-center">
@@ -218,7 +218,7 @@ export function ContentGrid() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-[200px]">
-      {data.data.map((session, index) => (
+      {data.map((session, index) => (
         <ContentCard 
           key={session.id} 
           session={session} 

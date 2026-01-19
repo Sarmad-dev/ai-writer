@@ -1,24 +1,8 @@
 'use client';
 
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  AreaChart,
-  Area,
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
+import React, { useMemo } from 'react';
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 
 export type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter';
 
@@ -65,115 +49,95 @@ export function ChartRenderer({ type, data, config = {} }: ChartRendererProps) {
     yKey = 'value',
   } = config;
 
-  // Support both xLabel/yLabel and xAxisLabel/yAxisLabel
-  const xLabel = (config as any).xLabel || xAxisLabel;
-  const yLabel = (config as any).yLabel || yAxisLabel;
+  const xLabel = (config as ChartConfig & { xLabel?: string }).xLabel ?? xAxisLabel;
+  const yLabel = (config as ChartConfig & { yLabel?: string }).yLabel ?? yAxisLabel;
 
   // Auto-detect the correct key from data if not specified
   const detectedXKey = data.length > 0 && 'label' in data[0] ? 'label' : xKey;
   const detectedDataKey = data.length > 0 && 'value' in data[0] ? 'value' : dataKey;
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 bg-muted/30 rounded">
-        <p className="text-sm text-muted-foreground">No data available</p>
-      </div>
-    );
-  }
-
-  const renderChart = () => {
-    switch (type) {
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={detectedXKey} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -5 } : undefined} />
-              <YAxis label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft' } : undefined} />
-              <Tooltip />
-              {legend && <Legend />}
-              <Bar dataKey={detectedDataKey} fill={colors[0]}>
-                {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={detectedXKey} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -5 } : undefined} />
-              <YAxis label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft' } : undefined} />
-              <Tooltip />
-              {legend && <Legend />}
-              <Line type="monotone" dataKey={detectedDataKey} stroke={colors[0]} strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-
-      case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey={detectedDataKey}
-                nameKey={detectedXKey}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label
-              >
-                {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              {legend && <Legend />}
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      case 'area':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={detectedXKey} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -5 } : undefined} />
-              <YAxis label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft' } : undefined} />
-              <Tooltip />
-              {legend && <Legend />}
-              <Area type="monotone" dataKey={detectedDataKey} stroke={colors[0]} fill={colors[0]} fillOpacity={0.6} />
-            </AreaChart>
-          </ResponsiveContainer>
-        );
-
-      case 'scatter':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={detectedXKey} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -5 } : undefined} />
-              <YAxis dataKey={yKey} label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft' } : undefined} />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              {legend && <Legend />}
-              <Scatter name={detectedDataKey} data={data} fill={colors[0]} />
-            </ScatterChart>
-          </ResponsiveContainer>
-        );
-
-      default:
-        return (
-          <div className="flex items-center justify-center h-64 bg-muted/30 rounded">
-            <p className="text-sm text-muted-foreground">Unsupported chart type: {type}</p>
-          </div>
-        );
-    }
+  const toStr = (v: unknown) => String(v ?? '');
+  const toNum = (v: unknown) => {
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
   };
+
+  const option = useMemo(() => {
+    if (!data || data.length === 0) return null;
+    const base: EChartsOption = {
+      title: title
+        ? {
+            text: title,
+            left: 'center',
+            textStyle: { fontSize: 16, fontWeight: 'bold' },
+          }
+        : undefined,
+      color: colors,
+      tooltip: { trigger: type === 'pie' ? 'item' : 'axis' },
+      legend: { show: legend },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    };
+
+    if (type === 'bar') {
+      const categories = data.map((d) => toStr(d[detectedXKey]));
+      const seriesData = data.map((d, i) => ({
+        value: toNum(d[detectedDataKey]),
+        itemStyle: { color: colors[i % colors.length] },
+      }));
+      return {
+        ...base,
+        xAxis: { type: 'category', name: xLabel || '', nameLocation: 'middle', nameGap: 30, data: categories },
+        yAxis: { type: 'value', name: yLabel || '', nameLocation: 'middle', nameGap: 50 },
+        series: [{ name: detectedDataKey, type: 'bar', data: seriesData }],
+      };
+    }
+
+    if (type === 'line') {
+      const categories = data.map((d) => toStr(d[detectedXKey]));
+      const seriesData = data.map((d) => toNum(d[detectedDataKey]));
+      return {
+        ...base,
+        xAxis: { type: 'category', name: xLabel || '', data: categories },
+        yAxis: { type: 'value', name: yLabel || '' },
+        series: [{ name: detectedDataKey, type: 'line', data: seriesData }],
+      };
+    }
+
+    if (type === 'area') {
+      const categories = data.map((d) => toStr(d[detectedXKey]));
+      const seriesData = data.map((d) => toNum(d[detectedDataKey]));
+      return {
+        ...base,
+        xAxis: { type: 'category', name: xLabel || '', data: categories },
+        yAxis: { type: 'value', name: yLabel || '' },
+        series: [{ name: detectedDataKey, type: 'line', areaStyle: {}, data: seriesData }],
+      };
+    }
+
+    if (type === 'pie') {
+      const seriesData = data.map((d, i) => ({
+        name: toStr(d[detectedXKey]),
+        value: toNum(d[detectedDataKey]),
+        itemStyle: { color: colors[i % colors.length] },
+      }));
+      return {
+        ...base,
+        series: [{ type: 'pie', radius: '50%', data: seriesData }],
+      };
+    }
+
+    if (type === 'scatter') {
+      const seriesData = data.map((d) => [toNum(d[detectedXKey]), toNum(d[yKey])]);
+      return {
+        ...base,
+        xAxis: { type: 'value', name: xLabel || '' },
+        yAxis: { type: 'value', name: yLabel || '' },
+        series: [{ name: detectedDataKey, type: 'scatter', data: seriesData }],
+      };
+    }
+
+    return null;
+  }, [type, data, detectedXKey, detectedDataKey, xLabel, yLabel, colors, legend, yKey, title]);
 
   return (
     <div className="w-full">
@@ -181,7 +145,13 @@ export function ChartRenderer({ type, data, config = {} }: ChartRendererProps) {
         <h3 className="text-lg font-semibold mb-4 text-center">{title}</h3>
       )}
       <div className="h-64">
-        {renderChart()}
+        {option ? (
+          <ReactECharts option={option} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'canvas' }} theme="light" />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-muted/30 rounded">
+            <p className="text-sm text-muted-foreground">Unsupported chart type: {type}</p>
+          </div>
+        )}
       </div>
     </div>
   );

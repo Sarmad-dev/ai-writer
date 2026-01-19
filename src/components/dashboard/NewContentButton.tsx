@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useCreateSession } from '@/lib/query/hooks/useContentSessions';
+import { useCreateSession } from '@/hooks/use-content-sessions';
 import { useRouter } from 'next/navigation';
 
 /**

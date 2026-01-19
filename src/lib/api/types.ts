@@ -8,10 +8,18 @@ export interface ContentSession {
   id: string;
   userId: string;
   title: string;
+  contentType: string;
   prompt: string;
   content: string | null;
   status: SessionStatus;
   metadata: Record<string, any> | null;
+  
+  // Document Statistics
+  wordCount: number;
+  characterCount: number;
+  paragraphCount: number;
+  readingTime: number; // in minutes
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +36,10 @@ export interface UpdateSessionRequest {
   content?: string;
   status?: SessionStatus;
   metadata?: Record<string, any>;
+  wordCount?: number;
+  characterCount?: number;
+  paragraphCount?: number;
+  readingTime?: number;
 }
 
 export interface PaginatedResponse<T> {

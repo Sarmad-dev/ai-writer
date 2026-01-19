@@ -30,22 +30,49 @@ export class TavilyClient {
   async search(query: string, options: TavilySearchOptions = {}): Promise<SearchResult[]> {
     const { searchDepth = 'basic', maxResults = 5 } = options;
 
+    // Validate API key
+    if (!this.apiKey) {
+      throw new Error('Tavily API key is required. Please set SEARCH_API_KEY environment variable.');
+    }
+
+    // Validate query
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      throw new Error('Search query must be a non-empty string');
+    }
+
     try {
+      // Tavily API expects api_key in the request body
+      const requestBody = {
+        api_key: this.apiKey,
+        query: query.trim(),
+        search_depth: searchDepth,
+        max_results: maxResults,
+      };
+
       const response = await fetch(`${this.baseUrl}/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          api_key: this.apiKey,
-          query,
-          search_depth: searchDepth,
-          max_results: maxResults,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error(`Tavily API error: ${response.status} - ${response.statusText}`);
+        // Try to get error details from response body
+        let errorMessage = `${response.status} - ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } catch {
+          // If parsing fails, use status text
+        }
+        throw new Error(`Tavily API error: ${response.status} - ${errorMessage}`);
       }
 
       const data = await response.json();

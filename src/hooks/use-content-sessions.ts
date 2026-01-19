@@ -1,15 +1,5 @@
+import { ContentSession } from "@/lib/api/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-export interface ContentSession {
-  id: string;
-  title: string;
-  content: string;
-  prompt?: string;
-  wordCount: number;
-  characterCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 interface CreateSessionInput {
   title: string;
@@ -41,13 +31,16 @@ async function fetchSessions(): Promise<ContentSession[]> {
     throw new Error("Failed to fetch sessions");
   }
   const data = await response.json();
-  
+
   // Parse dates and calculate word/character counts
-  return data.data.map((session: any) => {
+  return data.data.map((session: ContentSession) => {
     const content = session.content || "";
     const text = content.replace(/<[^>]*>/g, ""); // Strip HTML
-    const words = text.trim().split(/\s+/).filter((word: string) => word.length > 0);
-    
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((word: string) => word.length > 0);
+
     return {
       ...session,
       createdAt: new Date(session.createdAt),
@@ -65,11 +58,14 @@ async function fetchSession(id: string): Promise<ContentSession> {
     throw new Error("Failed to fetch session");
   }
   const data = await response.json();
-  
+
   const content = data.content || "";
   const text = content.replace(/<[^>]*>/g, ""); // Strip HTML
-  const words = text.trim().split(/\s+/).filter((word: string) => word.length > 0);
-  
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((word: string) => word.length > 0);
+
   return {
     ...data,
     createdAt: new Date(data.createdAt),
@@ -80,22 +76,27 @@ async function fetchSession(id: string): Promise<ContentSession> {
 }
 
 // Create session
-async function createSession(input: CreateSessionInput): Promise<ContentSession> {
+async function createSession(
+  input: CreateSessionInput
+): Promise<ContentSession> {
   const response = await fetch("/api/content/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  
+
   if (!response.ok) {
     throw new Error("Failed to create session");
   }
-  
+
   const data = await response.json();
   const content = data.content || "";
   const text = content.replace(/<[^>]*>/g, "");
-  const words = text.trim().split(/\s+/).filter((word: string) => word.length > 0);
-  
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((word: string) => word.length > 0);
+
   return {
     ...data,
     createdAt: new Date(data.createdAt),
@@ -106,22 +107,28 @@ async function createSession(input: CreateSessionInput): Promise<ContentSession>
 }
 
 // Update session
-async function updateSession(id: string, input: UpdateSessionInput): Promise<ContentSession> {
+async function updateSession(
+  id: string,
+  input: UpdateSessionInput
+): Promise<ContentSession> {
   const response = await fetch(`/api/content/sessions/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  
+
   if (!response.ok) {
     throw new Error("Failed to update session");
   }
-  
+
   const data = await response.json();
   const content = data.content || "";
   const text = content.replace(/<[^>]*>/g, "");
-  const words = text.trim().split(/\s+/).filter((word: string) => word.length > 0);
-  
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((word: string) => word.length > 0);
+
   return {
     ...data,
     createdAt: new Date(data.createdAt),
@@ -136,29 +143,34 @@ async function deleteSession(id: string): Promise<void> {
   const response = await fetch(`/api/content/sessions/${id}`, {
     method: "DELETE",
   });
-  
+
   if (!response.ok) {
     throw new Error("Failed to delete session");
   }
 }
 
 // Duplicate session
-async function duplicateSession(input: DuplicateSessionInput): Promise<ContentSession> {
+async function duplicateSession(
+  input: DuplicateSessionInput
+): Promise<ContentSession> {
   const response = await fetch("/api/content/sessions/duplicate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  
+
   if (!response.ok) {
     throw new Error("Failed to duplicate session");
   }
-  
+
   const data = await response.json();
   const content = data.content || "";
   const text = content.replace(/<[^>]*>/g, "");
-  const words = text.trim().split(/\s+/).filter((word: string) => word.length > 0);
-  
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((word: string) => word.length > 0);
+
   return {
     ...data,
     createdAt: new Date(data.createdAt),
@@ -187,7 +199,7 @@ export function useContentSession(id: string) {
 
 export function useCreateSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createSession,
     onSuccess: () => {
@@ -198,20 +210,22 @@ export function useCreateSession() {
 
 export function useUpdateSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateSessionInput }) =>
       updateSession(id, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: contentSessionKeys.all });
-      queryClient.invalidateQueries({ queryKey: contentSessionKeys.detail(data.id) });
+      queryClient.invalidateQueries({
+        queryKey: contentSessionKeys.detail(data.id),
+      });
     },
   });
 }
 
 export function useDeleteSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteSession,
     onSuccess: () => {
@@ -222,7 +236,7 @@ export function useDeleteSession() {
 
 export function useDuplicateSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: duplicateSession,
     onSuccess: () => {

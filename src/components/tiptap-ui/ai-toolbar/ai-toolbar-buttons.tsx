@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Editor } from "@tiptap/react";
 import { aiClient } from "@/lib/ai/client";
-import { 
-  Sparkles, 
-  Wand2, 
-  FileText, 
-  Languages, 
-  PenTool, 
+import {
+  Sparkles,
+  Wand2,
+  FileText,
+  Languages,
+  PenTool,
   CheckCircle,
   MoreHorizontal,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/tiptap-ui-primitive/button";
 import {
@@ -39,13 +39,32 @@ interface AIToolbarButtonsProps {
 
 export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [promptMode, setPromptMode] = useState<"generate" | "translate" | null>(null);
+  const [promptMode, setPromptMode] = useState<"generate" | "translate" | null>(
+    null
+  );
   const [promptInput, setPromptInput] = useState("");
   const [targetLanguage, setTargetLanguage] = useState("Spanish");
+  const [hasSelection, setHasSelection] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateSelection = () => {
+      const { from, to } = editor.state.selection;
+      setHasSelection(from !== to);
+    };
+
+    updateSelection();
+    editor.on("selectionUpdate", updateSelection);
+    editor.on("transaction", updateSelection);
+
+    return () => {
+      editor.off("selectionUpdate", updateSelection);
+      editor.off("transaction", updateSelection);
+    };
+  }, [editor]);
 
   if (!editor) return null;
-
-  const hasSelection = !editor.state.selection.empty;
 
   const handleAIAction = async (action: () => void | Promise<void>) => {
     setIsLoading(true);
@@ -54,6 +73,8 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
       setTimeout(() => setIsLoading(false), 1000);
     } catch (error) {
       console.error("AI action failed:", error);
+      setIsLoading(false);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -128,7 +149,11 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
             data-style="ghost"
             onClick={() =>
               handleAIAction(() => {
-                editor.chain().focus().improveText({ tone: "professional" }).run();
+                editor
+                  .chain()
+                  .focus()
+                  .improveText({ tone: "professional" })
+                  .run();
               })
             }
             disabled={isLoading}
@@ -149,9 +174,7 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem
-              onClick={() => setPromptMode("generate")}
-            >
+            <DropdownMenuItem onClick={() => setPromptMode("generate")}>
               <Sparkles className="w-4 h-4 mr-2" />
               Generate Text
             </DropdownMenuItem>
@@ -159,7 +182,11 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
             <DropdownMenuItem
               onClick={() =>
                 handleAIAction(() => {
-                  editor.chain().focus().continueWriting({ tone: "consistent" }).run();
+                  editor
+                    .chain()
+                    .focus()
+                    .continueWriting({ tone: "consistent" })
+                    .run();
                 })
               }
             >
@@ -174,7 +201,11 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
                 <DropdownMenuItem
                   onClick={() =>
                     handleAIAction(() => {
-                      editor.chain().focus().improveText({ tone: "professional" }).run();
+                      editor
+                        .chain()
+                        .focus()
+                        .improveText({ tone: "professional" })
+                        .run();
                     })
                   }
                 >
@@ -196,7 +227,11 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
                 <DropdownMenuItem
                   onClick={() =>
                     handleAIAction(() => {
-                      editor.chain().focus().summarizeText({ length: "medium" }).run();
+                      editor
+                        .chain()
+                        .focus()
+                        .summarizeText({ length: "medium" })
+                        .run();
                     })
                   }
                 >
@@ -206,8 +241,8 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
 
                 <DropdownMenuItem
                   onClick={() => {
-                    setPromptMode("translate")
-                    console.log("Translate selected text")
+                    setPromptMode("translate");
+                    console.log("Translate selected text");
                   }}
                 >
                   <Languages className="w-4 h-4 mr-2" />
@@ -323,10 +358,20 @@ export function AIToolbarButtons({ editor }: AIToolbarButtonsProps) {
                 disabled={
                   promptMode === "generate"
                     ? !promptInput.trim()
-                    : !targetLanguage.trim()
+                    : !targetLanguage.trim() || isLoading
                 }
               >
-                {promptMode === "translate" ? "Translate" : "Generate"}
+                {isLoading
+                  ? promptMode === "generate"
+                    ? "Generating..."
+                    : promptMode === "translate"
+                    ? "Translating..."
+                    : "Generate"
+                  : promptMode === "generate"
+                  ? "Generate"
+                  : promptMode === "translate"
+                  ? "Translate"
+                  : "Generate"}
               </UiButton>
             </DialogFooter>
           </form>

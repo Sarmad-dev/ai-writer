@@ -6,6 +6,7 @@ import { EditorContent, EditorContext, useEditor } from "@tiptap/react";
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit";
 import { Image } from "@/components/tiptap-node/image-node/image-node-extension";
+import { LinkNode, LinkHoverHandler } from "@/components/tiptap-node/link-node";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { Typography } from "@tiptap/extension-typography";
@@ -37,6 +38,7 @@ import "@/components/tiptap-node/image-node/image-node.scss";
 import "@/components/tiptap-node/heading-node/heading-node.scss";
 import "@/components/tiptap-node/paragraph-node/paragraph-node.scss";
 import "@/components/tiptap-node/math-node/math-node.scss";
+import "@/components/tiptap-node/link-node/link-node.scss";
 
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu";
@@ -67,9 +69,7 @@ import { NodeAlignment } from "@/components/tiptap-extension/node-alignment-exte
 import { AIExtension } from "@/components/tiptap-extension/ai-extension";
 import { SlashCommandMenu } from "@/components/tiptap-ui/slash-command-menu";
 import { AIToolbarButtons } from "@/components/tiptap-ui/ai-toolbar";
-import { AISelectionMenu } from "@/components/tiptap-ui/ai-selection-menu";
 import { useSlashCommand } from "@/hooks/use-slash-command";
-import { useAISelectionMenu } from "@/hooks/use-ai-selection-menu";
 
 import { TableKit } from "@/components/tiptap-node/table-node/extensions/table-node-extension";
 import { TableHandleExtension } from "@/components/tiptap-node/table-node/extensions/table-handle";
@@ -259,9 +259,14 @@ export function SimpleEditor({
       },
       extensions: [
         StarterKit.configure({
-          link: {
-            openOnClick: true,
-            enableClickSelection: true,
+          link: false, // Disable default link extension
+        }),
+        LinkNode.configure({
+          openOnClick: false,
+          HTMLAttributes: {
+            class: 'tiptap-link',
+            rel: 'noopener noreferrer',
+            target: '_blank',
           },
         }),
         CodeBlockNode, // Use custom code block with syntax highlighting
@@ -339,13 +344,6 @@ export function SimpleEditor({
   // Slash command functionality (only when editor is ready)
   const slashCommand = useSlashCommand({ editor });
 
-  // AI selection menu functionality (shows when text is selected, only when editor is ready)
-  const aiSelectionMenu = useAISelectionMenu({
-    editor,
-    autoShowOnSelection: true,
-    minSelectionLength: 5, // Only show for selections of 5+ characters
-  });
-
   const { settings } = useEditorStore()
 
   return (
@@ -387,6 +385,9 @@ export function SimpleEditor({
         }}
       />
 
+      {/* Link hover handler for preview functionality */}
+      <LinkHoverHandler editorElement={editor?.view.dom || null} />
+
       <TableHandle />
       <TableSelectionOverlay
         showResizeHandles={true}
@@ -416,17 +417,6 @@ export function SimpleEditor({
           position={slashCommand.position}
           query={slashCommand.query}
           range={slashCommand.range}
-        />
-      )}
-
-      {editor && (
-        <AISelectionMenu
-          editor={editor}
-          isVisible={aiSelectionMenu.isVisible}
-          position={aiSelectionMenu.position}
-          selectedText={aiSelectionMenu.selectedText}
-          range={aiSelectionMenu.range}
-          onClose={aiSelectionMenu.hideMenu}
         />
       )}
     </EditorContext.Provider>

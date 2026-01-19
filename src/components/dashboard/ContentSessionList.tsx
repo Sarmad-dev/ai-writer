@@ -1,6 +1,6 @@
 'use client';
 
-import { useContentSessions } from '@/lib/query/hooks/useContentSessions';
+import { useContentSessions } from '@/hooks/use-content-sessions';
 import { ContentSessionCard } from './ContentSessionCard';
 import { Loader2, FileX } from 'lucide-react';
 
@@ -41,7 +41,7 @@ export function ContentSessionList() {
   }
 
   // Empty state
-  if (!data || data.data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center max-w-md">
@@ -60,7 +60,7 @@ export function ContentSessionList() {
   // Display sessions in a grid
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {data.data.map((session) => (
+      {data.map((session) => (
         <ContentSessionCard key={session.id} session={session} />
       ))}
     </div>

@@ -2,13 +2,9 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
-import {
-  Loader2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { GenerationSidebar } from "@/components/content/GenerationSidebar";
-import {
-  ContentEditor,
-} from "@/components/editor/ContentEditor";
+import { ContentEditor } from "@/components/editor/ContentEditor";
 import type { WorkflowStatus } from "@/lib/agent/types";
 import { ContentSidebar } from "@/components/content/ContentSidebar";
 import { EditorHeader } from "@/components/content/EditorHeader";
@@ -196,14 +192,6 @@ export default function ContentDetailPage() {
     }
   }, [prompt, isGenerating, startGeneration]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Main Content Area */}
@@ -213,20 +201,26 @@ export default function ContentDetailPage() {
         <ContentSidebar />
 
         {/* Center - Content Editor */}
-        <div className="flex-1 flex items-center flex-col relative">
-          <ContentEditor
-            sessionId={documentId}
-            autoSave={true}
-            autoSaveDelay={2000}
-          />
-          <div className="relative w-full h-[50px] -top-14 flex items-center justify-center">
-            <EditorInput
-              prompt={prompt}
-              setPrompt={setPrompt}
-              handleGenerateClick={handleGenerateClick}
-            />
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 flex items-center flex-col relative">
+            <ContentEditor
+              sessionId={documentId}
+              autoSave={true}
+              autoSaveDelay={2000}
+            />
+            <div className="relative w-full h-[50px] -top-14 flex items-center justify-center">
+              <EditorInput
+                prompt={prompt}
+                setPrompt={setPrompt}
+                handleGenerateClick={handleGenerateClick}
+              />
+            </div>
+          </div>
+        )}
 
         <GenerationSidebar status={status} steps={steps} />
       </div>

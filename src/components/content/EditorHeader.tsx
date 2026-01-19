@@ -32,8 +32,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { EnhancedDocumentControls } from "./EnhancedDocumentControls";
 import { useEditor } from "@/hooks/useEditor";
+import { 
+  exportAsPDF, 
+  exportAsDOCX, 
+  downloadMarkdown, 
+  copyDocumentLink 
+} from "@/lib/export";
 
 interface EditorHeaderProps {
   // Optional props for backward compatibility
@@ -48,10 +55,13 @@ interface EditorHeaderProps {
 export function EditorHeader(props: EditorHeaderProps) {
   // Use single hook to avoid duplicate subscriptions
   const { 
+    documentId,
     title: storeTitle, 
+    content,
     lastSaved: storeLastSaved, 
     isDirty, 
     isSaving, 
+    settings,
     setTitle, 
     save, 
     canRedo, 
@@ -66,6 +76,7 @@ export function EditorHeader(props: EditorHeaderProps) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Update editedTitle when title changes
   useEffect(() => {
@@ -103,6 +114,84 @@ export function EditorHeader(props: EditorHeaderProps) {
       setTitle(editedTitle);
     }
     setIsEditing(false);
+  };
+
+  const handleCopyLink = async () => {
+    if (!documentId) {
+      toast.error("No document ID available");
+      return;
+    }
+    
+    try {
+      await copyDocumentLink(documentId);
+      toast.success("Document link copied to clipboard");
+    } catch (error) {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      await exportAsPDF({
+        title,
+        content,
+        settings: {
+          fontSize: settings.fontSize,
+          marginTop: settings.marginTop,
+          marginBottom: settings.marginBottom,
+          marginLeft: settings.marginLeft,
+          marginRight: settings.marginRight,
+        }
+      });
+      toast.success("PDF exported successfully");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Failed to export PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportDOCX = async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      await exportAsDOCX({
+        title,
+        content,
+        settings: {
+          fontSize: settings.fontSize,
+        }
+      });
+      toast.success("DOCX exported successfully");
+    } catch (error) {
+      console.error("DOCX export error:", error);
+      toast.error("Failed to export DOCX");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      downloadMarkdown({
+        title,
+        content,
+      });
+      toast.success("Markdown exported successfully");
+    } catch (error) {
+      console.error("Markdown export error:", error);
+      toast.error("Failed to export Markdown");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -222,26 +311,38 @@ export function EditorHeader(props: EditorHeaderProps) {
                   variant="outline"
                   size="sm"
                   className="h-8 gap-1 bg-transparent"
+                  disabled={isExporting}
                 >
                   <Share2 className="size-4" />
-                  <span className="hidden sm:inline">Share</span>
+                  <span className="hidden sm:inline">
+                    {isExporting ? "Exporting..." : "Share"}
+                  </span>
                   <ChevronDown className="size-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLink}>
                   <Copy className="mr-2 size-4" />
                   Copy link
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                >
                   <Download className="mr-2 size-4" />
                   Export as PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExportDOCX}
+                  disabled={isExporting}
+                >
                   <Download className="mr-2 size-4" />
                   Export as DOCX
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExportMarkdown}
+                  disabled={isExporting}
+                >
                   <Download className="mr-2 size-4" />
                   Export as Markdown
                 </DropdownMenuItem>
