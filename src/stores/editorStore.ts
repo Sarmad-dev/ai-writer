@@ -93,6 +93,10 @@ export interface EditorState {
   sidebarOpen: boolean
   toolbarVisible: boolean
   
+  // Auto-save settings
+  autoSaveEnabled: boolean
+  autoSaveDelay: number
+  
   // Word Count and Statistics
   wordCount: number
   characterCount: number
@@ -136,6 +140,11 @@ export interface EditorActions {
   toggleSidebar: () => void
   toggleToolbar: () => void
   setZoom: (level: number) => void
+  
+  // Auto-save Actions
+  toggleAutoSave: () => void
+  setAutoSaveEnabled: (enabled: boolean) => void
+  setAutoSaveDelay: (delay: number) => void
   
   // Error Handling
   setError: (error: string | null) => void
@@ -242,6 +251,10 @@ const initialState: EditorState = {
   isFullscreen: false,
   sidebarOpen: true,
   toolbarVisible: true,
+  
+  // Auto-save settings
+  autoSaveEnabled: true,
+  autoSaveDelay: 2000,
   
   // Statistics
   wordCount: 0,
@@ -485,6 +498,13 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           }))
         },
         
+        // Auto-save Actions
+        toggleAutoSave: () => set((state) => ({ autoSaveEnabled: !state.autoSaveEnabled })),
+        
+        setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+        
+        setAutoSaveDelay: (delay) => set({ autoSaveDelay: Math.max(1000, delay) }),
+        
         // Error Handling
         setError: (error) => set({ error }),
         
@@ -519,6 +539,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           settings: state.settings,
           sidebarOpen: state.sidebarOpen,
           toolbarVisible: state.toolbarVisible,
+          autoSaveEnabled: state.autoSaveEnabled,
+          autoSaveDelay: state.autoSaveDelay,
         }),
       }
     ),

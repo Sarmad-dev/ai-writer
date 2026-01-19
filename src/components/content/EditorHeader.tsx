@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft,
   Check,
@@ -50,6 +51,9 @@ interface EditorHeaderProps {
   onSave?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  // Auto-save props
+  autoSaveEnabled?: boolean;
+  onAutoSaveToggle?: (enabled: boolean) => void;
 }
 
 export function EditorHeader(props: EditorHeaderProps) {
@@ -62,17 +66,20 @@ export function EditorHeader(props: EditorHeaderProps) {
     isDirty, 
     isSaving, 
     settings,
+    autoSaveEnabled,
     setTitle, 
     save, 
     canRedo, 
     canUndo, 
     undo, 
-    redo 
+    redo,
+    toggleAutoSave 
   } = useEditor();
 
   // Use props if provided, otherwise use store values
   const title = props.title ?? storeTitle;
   const lastSaved = props.lastSaved ?? storeLastSaved;
+  const currentAutoSaveEnabled = props.autoSaveEnabled ?? autoSaveEnabled;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
@@ -194,6 +201,14 @@ export function EditorHeader(props: EditorHeaderProps) {
     }
   };
 
+  const handleAutoSaveToggle = (enabled: boolean) => {
+    if (props.onAutoSaveToggle) {
+      props.onAutoSaveToggle(enabled);
+    } else {
+      toggleAutoSave();
+    }
+  };
+
   return (
     <TooltipProvider>
       <header className="flex flex-col border-b border-border bg-background">
@@ -304,6 +319,24 @@ export function EditorHeader(props: EditorHeaderProps) {
                 </>
               )}
             </Button>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={currentAutoSaveEnabled}
+                      onCheckedChange={handleAutoSaveToggle}
+                      className="scale-75"
+                    />
+                    <span className="hidden sm:inline">Auto-save</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {currentAutoSaveEnabled ? "Disable auto-save" : "Enable auto-save"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

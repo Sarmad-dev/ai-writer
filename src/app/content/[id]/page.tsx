@@ -16,7 +16,7 @@ export default function ContentDetailPage() {
   const params = useParams();
   const documentId = params.id as string;
 
-  const { setContent, title, setTitle, prompt, setPrompt, isLoading } =
+  const { setContent, title, setTitle, prompt, setPrompt, isLoading, autoSaveEnabled, toggleAutoSave } =
     useEditor({
       documentId,
       autoSaveDelay: 2000,
@@ -195,7 +195,12 @@ export default function ContentDetailPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Main Content Area */}
-      <EditorHeader title={title!} onTitleChange={setTitle} />
+      <EditorHeader 
+        title={title!} 
+        onTitleChange={setTitle}
+        autoSaveEnabled={autoSaveEnabled}
+        onAutoSaveToggle={toggleAutoSave}
+      />
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Generation Progress */}
         <ContentSidebar />

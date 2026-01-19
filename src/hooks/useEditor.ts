@@ -12,7 +12,7 @@ interface UseEditorOptions {
 export function useEditor(options: UseEditorOptions = {}) {
   const {
     documentId: optionsDocumentId,
-    autoSaveDelay = 2000,
+    autoSaveDelay: optionsAutoSaveDelay = 2000,
     enableAutoSave = true,
   } = options
 
@@ -40,6 +40,8 @@ export function useEditor(options: UseEditorOptions = {}) {
       isFullscreen: state.isFullscreen,
       sidebarOpen: state.sidebarOpen,
       toolbarVisible: state.toolbarVisible,
+      autoSaveEnabled: state.autoSaveEnabled,
+      autoSaveDelay: state.autoSaveDelay,
       // Actions
       loadDocument: state.loadDocument,
       setTitle: state.setTitle,
@@ -54,6 +56,9 @@ export function useEditor(options: UseEditorOptions = {}) {
       toggleSidebar: state.toggleSidebar,
       toggleToolbar: state.toggleToolbar,
       setZoom: state.setZoom,
+      toggleAutoSave: state.toggleAutoSave,
+      setAutoSaveEnabled: state.setAutoSaveEnabled,
+      setAutoSaveDelay: state.setAutoSaveDelay,
       clearError: state.clearError,
       reset: state.reset,
     }))
@@ -81,6 +86,8 @@ export function useEditor(options: UseEditorOptions = {}) {
     isFullscreen,
     sidebarOpen,
     toolbarVisible,
+    autoSaveEnabled,
+    autoSaveDelay,
     loadDocument,
     setTitle,
     setContent,
@@ -94,6 +101,9 @@ export function useEditor(options: UseEditorOptions = {}) {
     toggleSidebar,
     toggleToolbar,
     setZoom,
+    toggleAutoSave,
+    setAutoSaveEnabled,
+    setAutoSaveDelay,
     clearError,
     reset,
   } = store
@@ -108,7 +118,7 @@ export function useEditor(options: UseEditorOptions = {}) {
 
   // Auto-save functionality
   const scheduleAutoSave = useCallback(() => {
-    if (!enableAutoSave || !documentId || !isDirty) return
+    if (!autoSaveEnabled || !documentId || !isDirty) return
 
     // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
@@ -118,8 +128,8 @@ export function useEditor(options: UseEditorOptions = {}) {
     // Schedule auto-save
     autoSaveTimeoutRef.current = setTimeout(() => {
       useEditorStore.getState().autoSave()
-    }, autoSaveDelay)
-  }, [enableAutoSave, documentId, isDirty, autoSaveDelay])
+    }, optionsAutoSaveDelay)
+  }, [autoSaveEnabled, documentId, isDirty, optionsAutoSaveDelay])
 
   // Trigger auto-save when content changes
   useEffect(() => {
@@ -220,6 +230,10 @@ export function useEditor(options: UseEditorOptions = {}) {
     sidebarOpen,
     toolbarVisible,
     
+    // Auto-save state
+    autoSaveEnabled,
+    autoSaveDelay,
+    
     // Actions
     setTitle,
     setContent,
@@ -233,6 +247,9 @@ export function useEditor(options: UseEditorOptions = {}) {
     toggleSidebar,
     toggleToolbar,
     setZoom,
+    toggleAutoSave,
+    setAutoSaveEnabled,
+    setAutoSaveDelay,
     clearError,
     reset,
     
